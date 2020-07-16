@@ -25,7 +25,9 @@
 	<?php endif; ?>
 	
 	<?php include(erLhcoreClassDesign::designtpl('lhuser/menu_tabs/personal_canned_messages_tab.tpl.php'));?>
-	
+
+	<?php include(erLhcoreClassDesign::designtpl('lhuser/menu_tabs/personal_auto_responder_tab.tpl.php'));?>
+
 	<?php if (erLhcoreClassUser::instance()->hasAccessTo('lhuser','allowtochoosependingmode')) : ?>
 	<li role="presentation" class="nav-item"><a href="#pending" class="nav-link<?php if ($tab == 'tab_pending') : ?> active<?php endif;?>" aria-controls="pending" role="tab" data-toggle="tab"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Chats');?></a></li>
 	<?php endif;?>
@@ -166,8 +168,8 @@
             <label><input type="checkbox" name="closedTabEnabled" value="1" <?php erLhcoreClassModelUserSetting::getSetting('enable_close_list',0) == 1 ? print 'checked="checked"' : '' ?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Closed chats list enabled');?></label><br>
 			<?php endif; ?>
 
-            <label><input type="checkbox" name="mychatsTabEnabled" value="1" <?php erLhcoreClassModelUserSetting::getSetting('enable_mchats_list',0) == 1 ? print 'checked="checked"' : '' ?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','My pending and active chats list enabled');?></label><br>
-			<label><input type="checkbox" name="botchatsTabEnabled" value="1" <?php erLhcoreClassModelUserSetting::getSetting('enable_bot_list',0) == 1 ? print 'checked="checked"' : '' ?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Bot chats list enabled');?></label><br>
+            <label><input type="checkbox" name="mychatsTabEnabled" value="1" <?php erLhcoreClassModelUserSetting::getSetting('enable_mchats_list',1) == 1 ? print 'checked="checked"' : '' ?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','My pending and active chats list enabled');?></label><br>
+			<label><input type="checkbox" name="botchatsTabEnabled" value="1" <?php erLhcoreClassModelUserSetting::getSetting('enable_bot_list',1) == 1 ? print 'checked="checked"' : '' ?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Bot chats list enabled');?></label><br>
 
 			<input type="submit" class="btn btn-secondary" name="UpdateTabsSettings_account" value="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Update');?>" />
 		</form>
@@ -175,6 +177,8 @@
     <?php endif; ?>
   	
   	<?php include(erLhcoreClassDesign::designtpl('lhuser/menu_tabs_content/personal_canned_messages_tab.tpl.php'));?>
+
+  	<?php include(erLhcoreClassDesign::designtpl('lhuser/menu_tabs_content/personal_auto_responder_tab.tpl.php'));?>
 
     <div role="tabpanel" class="tab-pane <?php if ($tab == 'tab_pending') : ?>active<?php endif;?>" id="pending">
 
@@ -190,6 +194,10 @@
 
             <div class="form-group">
                 <label><input type="checkbox" name="autoAccept" value="1" <?php $user->auto_accept == 1 ? print 'checked="checked"' : '' ?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Automatically accept assigned chats');?></label>
+            </div>
+
+            <div class="form-group">
+                <label><input type="checkbox" name="auto_join_private" value="1" <?php erLhcoreClassModelUserSetting::getSetting('auto_join_private',1) == 1 ? print 'checked="checked"' : '' ?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Auto join private chats');?></label>
             </div>
 
             <div class="form-group">

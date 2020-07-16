@@ -50,7 +50,8 @@ class erLhAbstractModelProactiveChatInvitation {
 			'bot_offline' => $this->bot_offline,
 			'disabled' => $this->disabled,
 			'campaign_id' => $this->campaign_id,
-			'design_data' => $this->design_data
+			'design_data' => $this->design_data,
+			'inject_only_html' => $this->inject_only_html
 		);
 			
 		return $stateArray;
@@ -62,7 +63,7 @@ class erLhAbstractModelProactiveChatInvitation {
 	}
 	
 	public function checkPermission(){
-		
+
 		$currentUser = erLhcoreClassUser::instance();
 		
 		/**
@@ -78,16 +79,8 @@ class erLhAbstractModelProactiveChatInvitation {
 	}
 	
 	public static function getFilter(){
-		
-		$currentUser = erLhcoreClassUser::instance();
-		$departmentParams = array();
-		$userDepartments = erLhcoreClassUserDep::parseUserDepartmetnsForFilter($currentUser->getUserID());
-		if ($userDepartments !== true){
-			$departmentParams['filterin']['dep_id'] = $userDepartments;
-            $departmentParams['filterin']['dep_id'][] = 0;
-		}
-		
-		return $departmentParams;
+        // Global filters
+        return erLhcoreClassUserDep::conditionalDepartmentFilter(false,'dep_id');
 	}
 
 	public function getFields()
@@ -116,6 +109,7 @@ class erLhAbstractModelProactiveChatInvitation {
 	    
 	    return $items;
 	}
+
 
 	public function getModuleTranslations()
 	{
@@ -226,14 +220,44 @@ class erLhAbstractModelProactiveChatInvitation {
 		
 		return '';
 	}
-	
+
+	public static function processInjectHTMLInvitation(erLhcoreClassModelChatOnlineUser & $item, $params = array())
+    {
+        $referrer = self::getHost($item->referrer);
+
+        $session = erLhcoreClassAbstract::getSession();
+
+        $q = $session->createFindQuery( 'erLhAbstractModelProactiveChatInvitation' );
+
+        if (isset($params['tag']) && $params['tag'] != '') {
+            $appendTag = 'AND ('.$q->expr->eq( 'tag', $q->bindValue( $params['tag'] ) ).' OR tag = \'\')';
+        } else {
+            $appendTag = 'AND (tag = \'\')';
+        }
+
+        $q->where( $q->expr->lte( 'time_on_site', $q->bindValue( $item->time_on_site ) ).' AND '.$q->expr->lte( 'pageviews', $q->bindValue( $item->pages_count ) ).'
+				AND ('.$q->expr->eq( 'siteaccess', $q->bindValue( erLhcoreClassSystem::instance()->SiteAccess ) ).' OR siteaccess = \'\')
+				AND ('.$q->expr->eq( 'identifier', $q->bindValue( $item->identifier ) ).' OR identifier = \'\')
+				' . $appendTag . '
+				AND ('.$q->expr->eq( 'dep_id', $q->bindValue( $item->dep_id ) ).' OR dep_id = 0)
+	            AND `inject_only_html` = 1
+	            AND `disabled` = 0
+				AND ('.$q->expr->like( $session->database->quote(trim($referrer)), 'concat(referrer,\'%\')' ).' OR referrer = \'\')'
+        )
+        ->orderBy('position ASC')
+        ->limit( 10 );
+
+        $messagesToUser = $session->find( $q );
+
+        return $messagesToUser;
+    }
+
 	public static function processProActiveInvitationDynamic(erLhcoreClassModelChatOnlineUser & $item, $params = array())
 	{
 	    $referrer = self::getHost($item->referrer);
 	    
 	    $session = erLhcoreClassAbstract::getSession();
-	    $appendTag = '';
-	    
+
 	    $q = $session->createFindQuery( 'erLhAbstractModelProactiveChatInvitation' );
 	    
 	    if (isset($params['tag']) && $params['tag'] != '') {
@@ -247,6 +271,7 @@ class erLhAbstractModelProactiveChatInvitation {
 				AND ('.$q->expr->eq( 'identifier', $q->bindValue( $item->identifier ) ).' OR identifier = \'\')
 				' . $appendTag . '
 				AND ('.$q->expr->eq( 'dep_id', $q->bindValue( $item->dep_id ) ).' OR dep_id = 0)
+	            AND `inject_only_html` = 0
 	            AND `dynamic_invitation` = 1
 	            AND `disabled` = 0
 				AND ('.$q->expr->like( $session->database->quote(trim($referrer)), 'concat(referrer,\'%\')' ).' OR referrer = \'\')'
@@ -262,7 +287,9 @@ class erLhAbstractModelProactiveChatInvitation {
 	public static function setInvitation(erLhcoreClassModelChatOnlineUser & $item, $invitationId) {
 	    
 	    $message = self::fetch($invitationId);
-	    
+
+	    $message->translateByLocale();
+
 	    if ($item->total_visits == 1 || $message->message_returning == '') {
 	        $item->operator_message = $message->message;
 	    } else {
@@ -279,7 +306,7 @@ class erLhAbstractModelProactiveChatInvitation {
 
 	    $item->operator_user_proactive = $message->operator_name;
 	    $item->invitation_id = $message->id;
-	    $item->invitation_seen_count = 0;
+	    $item->invitation_seen_count = 1;
 	    $item->requires_email = $message->requires_email;
 	    $item->requires_username = $message->requires_username;
 	    $item->requires_phone = $message->requires_phone;
@@ -291,22 +318,79 @@ class erLhAbstractModelProactiveChatInvitation {
 	    if ($message->show_random_operator == 1) {
 	        $item->operator_user_id = erLhcoreClassChat::getRandomOnlineUserID(array('operators' => explode(',',trim($message->operator_ids))));
 	    }
-	    
-	    $message->executed_times += 1;
-	    $message->updateThis();
+
+        $message->executed_times += 1;
+        $message->updateThis(array('update' => array(
+            'executed_times'
+        )));
 	    	
 	    $item->saveThis();
 	    
 	    erLhcoreClassChatEventDispatcher::getInstance()->dispatch('onlineuser.proactive_triggered', array('message' => & $message, 'ou' => & $item));
 	}
-	
+
+	public function translateByLocale()
+    {
+        $chatLocale = null;
+
+        // Detect user locale
+        if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+            $parts = explode(';',$_SERVER['HTTP_ACCEPT_LANGUAGE']);
+            $languages = explode(',',$parts[0]);
+            if (isset($languages[0])) {
+                $chatLocale = $languages[0];
+            }
+        }
+
+        // We set custom chat locale only if visitor is not using default siteaccss and default langauge is not english.
+        if (erConfigClassLhConfig::getInstance()->getSetting('site','default_site_access') != erLhcoreClassSystem::instance()->SiteAccess) {
+            $siteAccessOptions = erConfigClassLhConfig::getInstance()->getSetting('site_access_options', erLhcoreClassSystem::instance()->SiteAccess);
+            // Never override to en
+            if (isset($siteAccessOptions['content_language']) && $siteAccessOptions['content_language'] != 'en') {
+                $chatLocale = $siteAccessOptions['content_language'];
+            }
+        }
+
+        if ($chatLocale !== null) {
+
+            $attributes =  $this->design_data_array;
+
+            $translatableAttributes = array(
+                'message',
+                'message_returning',
+                'message_returning',
+                'operator_name'
+            );
+
+            foreach ($translatableAttributes as $attr) {
+                if (isset($attributes[$attr . '_lang'])) {
+
+                    $translated = false;
+
+                    if ($chatLocale !== null) {
+                        foreach ($attributes[$attr . '_lang'] as $attrTrans) {
+                            if (in_array($chatLocale, $attrTrans['languages']) && $attrTrans['content'] != '') {
+                                $attributes[$attr] = $attrTrans['content'];
+                                $translated = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($translated === true) {
+                        $this->$attr = $attributes[$attr];
+                    }
+                }
+            }
+        }
+    }
+
 	public static function processProActiveInvitation(erLhcoreClassModelChatOnlineUser & $item, $params = array()) {
 
 		$referrer = self::getHost($item->referrer);
 
 		$session = erLhcoreClassAbstract::getSession();			
-		$appendTag = '';
-		
+
 		$q = $session->createFindQuery( 'erLhAbstractModelProactiveChatInvitation' );
 		
 		if (isset($params['tag']) && $params['tag'] != '') {
@@ -326,6 +410,7 @@ class erLhAbstractModelProactiveChatInvitation {
 				' . $appendTag . '
 		        AND `dynamic_invitation` = 0
 		        AND `disabled` = 0
+		        AND `inject_only_html` = 0
 		        ' . $appendInvitationsId . '
 				AND ('.$q->expr->eq( 'dep_id', $q->bindValue( $item->dep_id ) ).' OR dep_id = 0)
 				AND ('.$q->expr->like( $session->database->quote(trim($referrer)), 'concat(referrer,\'%\')' ).' OR referrer = \'\')'
@@ -349,6 +434,8 @@ class erLhAbstractModelProactiveChatInvitation {
                     }
                 }
 
+                $message->translateByLocale();
+
                 // Use default message if first time visit or returning message is empty
                 if ($item->total_visits == 1 || $message->message_returning == '') {
                     $item->operator_message = $message->message;
@@ -366,7 +453,7 @@ class erLhAbstractModelProactiveChatInvitation {
 
                 $item->operator_user_proactive = $message->operator_name;
                 $item->invitation_id = $message->id;
-                $item->invitation_seen_count = 0;
+                $item->invitation_seen_count = 1;
                 $item->requires_email = $message->requires_email;
                 $item->requires_username = $message->requires_username;
                 $item->requires_phone = $message->requires_phone;
@@ -385,7 +472,9 @@ class erLhAbstractModelProactiveChatInvitation {
                 )),'filter' => array('vid_id' => $item->id, 'invitation_id' => $message->id)));
 
                 $message->executed_times += 1;
-                $message->updateThis();
+                $message->updateThis(array('update' => array(
+                    'executed_times'
+                )));
 
                 // Campaign tracking
                 if (!($campaign instanceof erLhAbstractModelProactiveChatCampaignConversion)) {
@@ -422,7 +511,7 @@ class erLhAbstractModelProactiveChatInvitation {
 	}
 	
 	public function dependFooterJs(){
-	    return '<script type="text/javascript" src="'.erLhcoreClassDesign::designJS('js/angular-sanitize.min.js;js/angular.lhc.events.js').'"></script>';
+	    return '<script type="text/javascript" src="'.erLhcoreClassDesign::designJS('js/angular-sanitize.min.js;js/angular.lhc.events.js;js/angular.lhc.theme.js').'"></script>';
 	}
 	
 	public function validateInput($params)
@@ -597,6 +686,7 @@ class erLhAbstractModelProactiveChatInvitation {
 	public $disabled = 0;
 	public $campaign_id = 0;
 	public $design_data = '';
+	public $inject_only_html = 0;
 
 	public $next_reschedule = 0;
 	public $hide_add = false;

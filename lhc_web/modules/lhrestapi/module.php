@@ -9,7 +9,19 @@ $ViewList['index'] = array(
     'functions' => array( 'use_admin' )
 );
 
+$ViewList['chat'] = array(
+    'params' => array('id')
+);
+
 $ViewList['chats'] = array(
+    'params' => array()
+);
+
+$ViewList['extensions'] = array(
+    'params' => array()
+);
+
+$ViewList['chatscount'] = array(
     'params' => array()
 );
 
@@ -77,6 +89,30 @@ $ViewList['listofobjectid'] = array(
     'params' => array('user_id','type')
 );
 
+$ViewList['bots'] = array(
+    'params' => array()
+);
+
+$ViewList['user'] = array(
+    'params' => array('id')
+);
+
+$ViewList['lang'] = array(
+    'params' => array('ns')
+);
+
+$ViewList['bot'] = array(
+    'params' => array('id')
+);
+
+$ViewList['departments'] = array(
+    'params' => array()
+);
+
+$ViewList['department'] = array(
+    'params' => array('id')
+);
+
 $ViewList['getuser'] = array(
     'params' => array()
 );
@@ -90,6 +126,10 @@ $ViewList['loginbytoken'] = array(
 );
 
 $ViewList['logout'] = array(
+    'params' => array()
+);
+
+$ViewList['generateautologin'] = array(
     'params' => array()
 );
 
@@ -116,6 +156,10 @@ $ViewList['addmsgadmin'] = array(
 );
 
 $ViewList['setchatstatus'] = array(
+    'params' => array()
+);
+
+$ViewList['campaignsconversions'] = array(
     'params' => array()
 );
 
@@ -147,5 +191,6 @@ $ViewList['checkchatstatus'] = array(
 
 $FunctionList = array();
 $FunctionList['use_admin'] = array('explain' => 'Allow operator to manage REST API');
+$FunctionList['use_direct_logins'] = array('explain' => 'Allow opeator use api directly with his username and password');
 
 ?>

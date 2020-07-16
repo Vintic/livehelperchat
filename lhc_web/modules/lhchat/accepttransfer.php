@@ -25,8 +25,13 @@ try {
 $currentUser = erLhcoreClassUser::instance();
 $userData = $currentUser->getUserData(true);
 
+// Old chat user
+$oldUserId = $chat->user_id;
+
 if  ($chatTransfer->dep_id > 0) {
 	$chat->dep_id = $chatTransfer->dep_id;
+
+	erLhAbstractModelAutoResponder::updateAutoResponder($chat);
 
 	// User does not have access to chat in this department, that mean we do not have to do anything
 	if (!erLhcoreClassChat::hasAccessToRead($chat)){
@@ -68,6 +73,8 @@ if ($chatTransfer->transfer_to_user_id == $currentUser->getUserID()){
 		if ($dep_id > 0) {
 			$chat->dep_id = $dep_id;
 			$chat->status_sub = erLhcoreClassModelChat::STATUS_SUB_OWNER_CHANGED;
+
+            erLhAbstractModelAutoResponder::updateAutoResponder($chat);
 		}
 	}
 }
@@ -79,6 +86,8 @@ if ( !erLhcoreClassChat::hasAccessToRead($chat) )
 		if ($dep_id > 0) {
 			$chat->dep_id = $dep_id;
 			$chat->status_sub = erLhcoreClassModelChat::STATUS_SUB_OWNER_CHANGED;
+
+            erLhAbstractModelAutoResponder::updateAutoResponder($chat);
 		}
 	} else {
 		exit; // User does not have permission to assign chat to himself
@@ -95,6 +104,14 @@ if (isset($msg) && $msg instanceof erLhcoreClassModelmsg) {
 // All ok, we can make changes
 erLhcoreClassChat::getSession()->update($chat);
 erLhcoreClassTransfer::getSession()->delete($chatTransfer);
+
+if ($chat->user_id > 0 && $oldUserId != $chat->user_id) {
+    erLhcoreClassChat::updateActiveChats($chat->user_id);
+}
+
+if ($oldUserId != $chat->user_id && $oldUserId > 0) {
+    erLhcoreClassChat::updateActiveChats($oldUserId);
+}
 
 erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.chat_transfer_accepted',array('chat' => & $chat));
 

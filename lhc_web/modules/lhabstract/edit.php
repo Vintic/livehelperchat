@@ -1,5 +1,7 @@
 <?php
 
+erLhcoreClassChatEventDispatcher::getInstance()->dispatch('abstract.edit_'.strtolower($Params['user_parameters']['identifier']).'_general', array());
+
 $tpl = erLhcoreClassTemplate::getInstance('lhabstract/edit.tpl.php');
 $ObjectData = erLhcoreClassAbstract::getSession()->load( 'erLhAbstractModel'.$Params['user_parameters']['identifier'], (int)$Params['user_parameters']['object_id'] );
 
@@ -29,6 +31,8 @@ if (isset($_POST['SaveClient']) || isset($_POST['UpdateClient']))
 		exit;
 	}
 
+	$previousState = $ObjectData->getState();
+
     $Errors = erLhcoreClassAbstract::validateInput($ObjectData);
     if (count($Errors) == 0)
     {
@@ -41,10 +45,22 @@ if (isset($_POST['SaveClient']) || isset($_POST['UpdateClient']))
         $cache = CSCacheAPC::getMem();
         $cache->increaseCacheVersion('site_attributes_version');
 
-		if (isset($_POST['SaveClient'])){
+        $currentState = $ObjectData->getState();
+
+        erLhcoreClassLog::logObjectChange(array(
+            'object' => $ObjectData,
+            'check_log' => true,
+            'msg' => array(
+                'prev' => $previousState,
+                'curr' => $currentState,
+                'user_id' => $currentUser->getUserID()
+            )
+        ));
+
+        if (isset($_POST['SaveClient'])){
 	        erLhcoreClassModule::redirect('abstract/list','/'.$Params['user_parameters']['identifier']);
 	        exit;
-		}
+        }
 
 		$tpl->set('updated',true);
 
@@ -79,7 +95,11 @@ if (method_exists($ObjectData,'dependFooterJs')) {
 }
 
 if (isset($object_trans['path'])){
-	$Result['path'][] = $object_trans['path'];
+    if (isset($object_trans['path']['url'])) {
+        $Result['path'][] = $object_trans['path'];
+    } else {
+        $Result['path'] = $object_trans['path'];
+    }
 	$Result['path'][] = array('url' => erLhcoreClassDesign::baseurl('abstract/list').'/'.$Params['user_parameters']['identifier'], 'title' => $object_trans['name']);
 	$Result['path'][] = array('title' =>erTranslationClassLhTranslation::getInstance()->getTranslation('system/buttons','Edit'));
 } else {

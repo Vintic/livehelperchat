@@ -1,5 +1,7 @@
 <?php
 
+erLhcoreClassChatEventDispatcher::getInstance()->dispatch('abstract.new_'.strtolower($Params['user_parameters']['identifier']).'_general', array());
+
 $tpl = erLhcoreClassTemplate::getInstance('lhabstract/new.tpl.php');
 
 $objectClass = 'erLhAbstractModel'.$Params['user_parameters']['identifier'];
@@ -43,6 +45,15 @@ if ( isset($_POST['SaveClient']) || isset($_POST['UpdateClient']) ) {
 
         erLhcoreClassChatEventDispatcher::getInstance()->dispatch('abstract.created.'.strtolower($objectClass),array('object' => & $objectData));
 
+        erLhcoreClassLog::logObjectChange(array(
+            'object' => $objectData,
+            'check_log' => true,
+            'msg' => array(
+                'new' => $objectData->getState(),
+                'user_id' => $currentUser->getUserID()
+            )
+        ));
+
         if ( isset($_POST['SaveClient']) ) {
         	erLhcoreClassModule::redirect('abstract/list','/'.$Params['user_parameters']['identifier']);
         	exit;
@@ -82,7 +93,11 @@ if (method_exists($objectData,'dependFooterJs')) {
 }
 
 if (isset($object_trans['path'])){
-	$Result['path'][] = $object_trans['path'];
+    if (isset($object_trans['path']['url'])) {
+        $Result['path'][] = $object_trans['path'];
+    } else {
+        $Result['path'] = $object_trans['path'];
+    }
 	$Result['path'][] = array('url' => erLhcoreClassDesign::baseurl('abstract/list').'/'.$Params['user_parameters']['identifier'], 'title' => $object_trans['name']);	
 	$Result['path'][] = array('title' =>erTranslationClassLhTranslation::getInstance()->getTranslation('system/buttons','New'));
 } else {

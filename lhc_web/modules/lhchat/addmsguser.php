@@ -18,7 +18,7 @@ if ($form->hasValidData( 'msg' ) && trim($form->msg) != '' && trim(str_replace('
 	     
 	    $db->beginTransaction();
 	    
-	    $chat = erLhcoreClassModelChat::fetchAndLock($Params['user_parameters']['chat_id']);	
+	    $chat = erLhcoreClassModelChat::fetchAndLock($Params['user_parameters']['chat_id']);
 
 	    $validStatuses = array(
             erLhcoreClassModelChat::STATUS_PENDING_CHAT,
@@ -29,8 +29,11 @@ if ($form->hasValidData( 'msg' ) && trim($form->msg) != '' && trim(str_replace('
         erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.validstatus_chat',array('chat' => & $chat, 'valid_statuses' => & $validStatuses));
 
 	    if ($chat->hash == $Params['user_parameters']['hash'] && (in_array($chat->status,$validStatuses)) && !in_array($chat->status_sub, array(erLhcoreClassModelChat::STATUS_SUB_SURVEY_SHOW,erLhcoreClassModelChat::STATUS_SUB_CONTACT_FORM))) // Allow add messages only if chat is active
-	    {	        	        
-	        $messagesToStore = explode('[[msgitm]]', trim($form->msg));
+	    {
+
+	        $msgText = preg_replace('/\[html\](.*?)\[\/html\]/ms','',$form->msg);
+
+	        $messagesToStore = explode('[[msgitm]]', trim($msgText));
 	        
 	        foreach ($messagesToStore as $messageText)
 	        {
@@ -59,8 +62,16 @@ if ($form->hasValidData( 'msg' ) && trim($form->msg) != '' && trim(str_replace('
                 exit;
             }
 
-            if (isset($chat->chat_variables_array['gbot_id']) && (!isset($chat->chat_variables_array['gbot_disabled']) || $chat->chat_variables_array['gbot_disabled'] == 0)) {
+            if ($chat->gbot_id > 0 && (!isset($chat->chat_variables_array['gbot_disabled']) || $chat->chat_variables_array['gbot_disabled'] == 0)) {
                 erLhcoreClassGenericBotWorkflow::userMessageAdded($chat, $msg);
+            }
+
+            // Reset active counter if visitor send new message and now user is the last message
+            if ($chat->status_sub != erLhcoreClassModelChat::STATUS_SUB_ON_HOLD && $chat->auto_responder !== false) {
+                if ($chat->auto_responder->active_send_status != 0 && $chat->last_user_msg_time < $chat->last_op_msg_time) {
+                    $chat->auto_responder->active_send_status = 0;
+                    $chat->auto_responder->saveThis();
+                }
             }
 
 	        $stmt = $db->prepare('UPDATE lh_chat SET last_user_msg_time = :last_user_msg_time, lsync = :lsync, last_msg_id = :last_msg_id, has_unread_messages = :has_unread_messages, unanswered_chat = :unanswered_chat WHERE id = :id');

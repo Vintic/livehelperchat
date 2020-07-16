@@ -120,6 +120,7 @@ class erLhcoreClassModelChat {
 
                // Anonymized
                'anonymized'    	        => $this->anonymized,
+               'gbot_id'    	        => $this->gbot_id,
        );
    }
 
@@ -174,6 +175,16 @@ class erLhcoreClassModelChat {
 
        // Repeat counter remove
        $q->deleteFrom( 'lh_generic_bot_repeat_restrict' )->where( $q->expr->eq( 'chat_id', $this->id ) );
+       $stmt = $q->prepare();
+       $stmt->execute();
+
+       // Bot chat event remove
+       $q->deleteFrom( 'lh_generic_bot_chat_event' )->where( $q->expr->eq( 'chat_id', $this->id ) );
+       $stmt = $q->prepare();
+       $stmt->execute();
+
+       // Bot chat event remove
+       $q->deleteFrom( 'lh_generic_bot_pending_event' )->where( $q->expr->eq( 'chat_id', $this->id ) );
        $stmt = $q->prepare();
        $stmt->execute();
        
@@ -393,7 +404,7 @@ class erLhcoreClassModelChat {
        	case 'number_in_queue':
        	        $this->number_in_queue = 1;
        	        if ($this->status == self::STATUS_PENDING_CHAT) {
-       	           $this->number_in_queue = erLhcoreClassChat::getCount(array('filterlt' => array('id' => $this->id),'filter' => array('dep_id' => $this->dep_id,'status' => self::STATUS_PENDING_CHAT))) + 1;
+       	           $this->number_in_queue = self::getCount(array('filterlt' => array('id' => $this->id), 'filtergte' => array('priority' => $this->priority),'filter' => array('dep_id' => $this->dep_id, 'status' => self::STATUS_PENDING_CHAT))) + 1;
        	        }
        	        return $this->number_in_queue;
        	    break;
@@ -447,7 +458,16 @@ class erLhcoreClassModelChat {
 
        			return $this->additional_data_array;
        		break;
-       		
+
+       case 'msg_v':
+            $this->msg_v = 1;
+            $chatVariables = $this->chat_variables_array;
+            if (isset($chatVariables['msg_v'])) {
+                $this->msg_v = $chatVariables['msg_v'];
+            }
+            return $this->msg_v;
+       break;
+
        	case 'chat_variables_array':
        	        if (!empty($this->chat_variables)){
            			$jsonData = json_decode($this->chat_variables,true);
@@ -466,7 +486,7 @@ class erLhcoreClassModelChat {
        	        }
        			return $this->chat_variables_array;
        		break;
-       		
+
        	case 'user_status_front':
 
        	    if ($this->lsync > 0) {
@@ -487,7 +507,21 @@ class erLhcoreClassModelChat {
        		}
 
        		return $this->user_status_front;
-       	break;	
+       	break;
+
+       	case 'bot':
+            $chatVariables = $this->chat_variables_array;
+            $bot = null;
+
+            if (isset($chatVariables['gbot_id']) && $chatVariables['gbot_id'] > 0) {
+                $bot = erLhcoreClassModelGenericBotBot::fetch($chatVariables['gbot_id']);
+            } elseif ($this->gbot_id > 0) {
+                $bot = erLhcoreClassModelGenericBotBot::fetch($this->gbot_id);
+            }
+
+            $this->bot = $bot;
+            return $this->bot;
+       	break;
        		
        	default:
        		break;
@@ -495,44 +529,63 @@ class erLhcoreClassModelChat {
 
    }
 
-   public static function detectLocation(erLhcoreClassModelChat & $instance)
+   public static function detectLocation(erLhcoreClassModelChat & $instance, $vid = '')
    {
-       $geoData = erLhcoreClassModelChatConfig::fetch('geo_data');
-       $geo_data = (array)$geoData->data;
+       $locationDetected = false;
 
-       $fileData = erLhcoreClassModelChatConfig::fetch('file_configuration');
-       $data = (array)$fileData->data;
-
-       if (isset($geo_data['geo_detection_enabled']) && $geo_data['geo_detection_enabled'] == 1) {
-
-           $params = array();
-
-           if ($geo_data['geo_service_identifier'] == 'mod_geoip2'){
-               $params['country_code'] = $geo_data['mod_geo_ip_country_code'];
-               $params['country_name'] = $geo_data['mod_geo_ip_country_name'];
-               $params['mod_geo_ip_city_name'] = $geo_data['mod_geo_ip_city_name'];
-               $params['mod_geo_ip_latitude'] = $geo_data['mod_geo_ip_latitude'];
-               $params['mod_geo_ip_longitude'] = $geo_data['mod_geo_ip_longitude'];
-           } elseif ($geo_data['geo_service_identifier'] == 'locatorhq') {
-               $params['username'] = $geo_data['locatorhqusername'];
-               $params['api_key'] = $geo_data['locatorhq_api_key'];
-           } elseif ($geo_data['geo_service_identifier'] == 'ipinfodbcom') {             
-               $params['api_key'] = $geo_data['ipinfodbcom_api_key'];
-           } elseif ($geo_data['geo_service_identifier'] == 'max_mind') {             
-               $params['detection_type'] = $geo_data['max_mind_detection_type'];         
-               $params['city_file'] = isset($geo_data['max_mind_city_location']) ? $geo_data['max_mind_city_location'] : '';
-           } elseif ($geo_data['geo_service_identifier'] == 'freegeoip') {
-               $params['freegeoip_key'] = $geo_data['freegeoip_key'];
+       // Try to detect GEO information from online visitor record. So we avoid duplicate calls.
+       if ($vid != '' && is_string($vid)) {
+           $onUser = erLhcoreClassModelChatOnlineUser::findOne(array('filter' => array('vid' => $vid)));
+           if ($onUser instanceof erLhcoreClassModelChatOnlineUser && $onUser->user_country_name != '') {
+               $instance->country_code = (string)$onUser->user_country_code;
+               $instance->country_name = (string)$onUser->user_country_name;
+               $instance->lat = (string)$onUser->lat;
+               $instance->lon = (string)$onUser->lon;
+               $instance->city = (string)$onUser->city;
+               $locationDetected = true;
            }
+       }
 
-           $location = erLhcoreClassModelChatOnlineUser::getUserData($geo_data['geo_service_identifier'],$instance->ip,$params);
+       if ($locationDetected === false) {
+           $geoData = erLhcoreClassModelChatConfig::fetch('geo_data');
+           $geo_data = (array)$geoData->data;
 
-           if ($location !== false){
-               $instance->country_code = (string)$location->country_code;
-               $instance->country_name = (string)$location->country_name;
-               $instance->lat = (string)$location->lat;
-               $instance->lon = (string)$location->lon;
-               $instance->city = (string)$location->city;
+           $fileData = erLhcoreClassModelChatConfig::fetch('file_configuration');
+           $data = (array)$fileData->data;
+
+           if (isset($geo_data['geo_detection_enabled']) && $geo_data['geo_detection_enabled'] == 1) {
+
+               $params = array();
+
+               if ($geo_data['geo_service_identifier'] == 'mod_geoip2'){
+                   $params['country_code'] = $geo_data['mod_geo_ip_country_code'];
+                   $params['country_name'] = $geo_data['mod_geo_ip_country_name'];
+                   $params['mod_geo_ip_city_name'] = $geo_data['mod_geo_ip_city_name'];
+                   $params['mod_geo_ip_latitude'] = $geo_data['mod_geo_ip_latitude'];
+                   $params['mod_geo_ip_longitude'] = $geo_data['mod_geo_ip_longitude'];
+               } elseif ($geo_data['geo_service_identifier'] == 'locatorhq') {
+                   $params['username'] = $geo_data['locatorhqusername'];
+                   $params['api_key'] = $geo_data['locatorhq_api_key'];
+               } elseif ($geo_data['geo_service_identifier'] == 'ipinfodbcom') {
+                   $params['api_key'] = $geo_data['ipinfodbcom_api_key'];
+               } elseif ($geo_data['geo_service_identifier'] == 'max_mind') {
+                   $params['detection_type'] = $geo_data['max_mind_detection_type'];
+                   $params['city_file'] = isset($geo_data['max_mind_city_location']) ? $geo_data['max_mind_city_location'] : '';
+               } elseif ($geo_data['geo_service_identifier'] == 'freegeoip') {
+                   $params['freegeoip_key'] = $geo_data['freegeoip_key'];
+               } elseif ($geo_data['geo_service_identifier'] == 'ipapi') {
+                   $params['api_key'] = $geo_data['ipapi_key'];
+               }
+
+               $location = erLhcoreClassModelChatOnlineUser::getUserData($geo_data['geo_service_identifier'],$instance->ip,$params);
+
+               if ($location !== false){
+                   $instance->country_code = (string)$location->country_code;
+                   $instance->country_name = (string)$location->country_name;
+                   $instance->lat = (string)$location->lat;
+                   $instance->lon = (string)$location->lon;
+                   $instance->city = (string)$location->city;
+               }
            }
        }
 
@@ -711,6 +764,9 @@ class erLhcoreClassModelChat {
 
    // 0 - PC, 1 - mobile, 2 - tablet
    public $device_type = 0;
+
+   // Bot ID assigned to the chat
+   public $gbot_id = 0;
 
    public $updateIgnoreColumns = array();
 }

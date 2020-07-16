@@ -122,6 +122,11 @@ $ViewList['setoffline'] = array (
 		'params' => array('status')
 );
 
+$ViewList['setalwaysonline'] = array (
+		'functions' => array( 'changealwaysonline' ),
+		'params' => array('status')
+);
+
 $ViewList['setinactive'] = array (
     'functions' => array( 'changeonlinestatus' ),
     'params' => array('status')
@@ -155,6 +160,11 @@ $ViewList['updatepassword'] = array(
     'functions' => array( )
 );
 
+$ViewList['setopstatus'] = array(
+    'params' => array('user_id'),
+    'functions' => array('setopstatus' )
+);
+
 $FunctionList['groupassignuser'] = array('explain' => 'Allow user to assign user to group');
 $FunctionList['editgroup'] = array('explain' => 'Allow user to edit group');
 $FunctionList['creategroup'] = array('explain' => 'Allow user to create group');
@@ -172,6 +182,7 @@ $FunctionList['userlistonlineall'] = array('explain' => 'Allow user to see logge
 $FunctionList['changeonlinestatus'] = array('explain' => 'Allow user to change his online status');
 $FunctionList['changeskypenick'] = array('explain' => 'Allow user to change/enter his skype nick');
 $FunctionList['personalcannedmsg'] = array('explain' => 'Allow user to have personal canned messages');
+$FunctionList['personalautoresponder'] = array('explain' => 'Allow user to have personal auto responder messages');
 $FunctionList['changevisibility'] = array('explain' => 'Allow user to change his visibility mode');
 $FunctionList['change_visibility_list'] = array('explain' => 'Allow user to choose what list should be visible by him, pending/active/unread/closed');
 $FunctionList['see_assigned_departments'] = array('explain' => 'Allow user to see departments assigned to him');
@@ -183,5 +194,9 @@ $FunctionList['canseealldepartmentstats'] = array('explain' => 'Allow user to se
 $FunctionList['import'] = array('explain' => 'Allow user to import users');
 $FunctionList['loginas'] = array('explain' => 'Allow user to login as other user');
 $FunctionList['passwordsecurity'] = array('explain' => 'Allow user to set password security requirements');
+$FunctionList['see_all'] = array('explain' => 'Allow user see all users/groups not only from his group/groups');
+$FunctionList['see_all_group_users'] = array('explain' => 'Allow user see all group users he belongs to.');
+$FunctionList['changealwaysonline'] = array('explain' => 'Allow user to change always online mode');
+$FunctionList['setopstatus'] = array('explain' => 'Allow user to change other user online status from online operators widget');
 
 ?>

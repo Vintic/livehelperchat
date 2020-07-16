@@ -25,6 +25,16 @@ $userData = $currentUser->getUserData(true);
 
 $columnsAdditional = erLhAbstractModelChatColumn::getList(array('ignore_fields' => array('position','conditions','column_name','column_name','column_identifier','enabled'), 'sort' => false, 'filter' => array('enabled' => 1, 'chat_enabled' => 1)));
 
+// User has included custom column which we ignore by default
+foreach ($columnsAdditional as $columnAdditional) {
+    if (strpos($columnAdditional->variable,'lhc.') !== false) {
+        $variableName = str_replace('lhc.','', $columnAdditional->variable);
+        if (in_array($variableName,erLhcoreClassChat::$chatListIgnoreField)) {
+            unset(erLhcoreClassChat::$chatListIgnoreField[array_search($variableName,erLhcoreClassChat::$chatListIgnoreField)]);
+        }
+    }
+}
+
 $ReturnMessages = array();
 
 $pendingTabEnabled = erLhcoreClassModelUserSetting::getSetting('enable_pending_list',1);
@@ -36,7 +46,7 @@ if (erLhcoreClassModelChatConfig::fetchCache('list_closed')->current_value == 1)
     $closedTabEnabled = 0;
 }
 
-$botTabEnabled = erLhcoreClassModelUserSetting::getSetting('enable_bot_list',0);
+$botTabEnabled = erLhcoreClassModelUserSetting::getSetting('enable_bot_list',1);
 
 if (erLhcoreClassModelChatConfig::fetchCache('list_unread')->current_value == 1) {
     $unreadTabEnabled = erLhcoreClassModelUserSetting::getSetting('enable_unread_list', 0);
@@ -47,13 +57,12 @@ if (erLhcoreClassModelChatConfig::fetchCache('list_unread')->current_value == 1)
 $showAllPending = erLhcoreClassModelUserSetting::getSetting('show_all_pending',1);
 $showDepartmentsStats = $currentUser->hasAccessTo('lhuser','canseedepartmentstats');
 $showDepartmentsStatsAll = $currentUser->hasAccessTo('lhuser','canseealldepartmentstats');
-$myChatsEnabled = erLhcoreClassModelUserSetting::getSetting('enable_mchats_list',0);
-
+$myChatsEnabled = erLhcoreClassModelUserSetting::getSetting('enable_mchats_list',1);
 
 $chatsList = array();
 $chatsListAll = array();
 
-if ($showDepartmentsStats == true) {
+if ($showDepartmentsStats == true && is_array($Params['user_parameters_unordered']['w']) && in_array('departments_stats',$Params['user_parameters_unordered']['w'])) {
     /**
      * Departments stats
      * */
@@ -194,6 +203,38 @@ if ($activeTabEnabled == true) {
 	$chatsList[] = & $ReturnMessages['active_chats']['list'];
 }
 
+if ($currentUser->hasAccessTo('lhgroupchat','use')) {
+    $limitList = is_numeric($Params['user_parameters_unordered']['limitgc']) ? (int)$Params['user_parameters_unordered']['limitgc'] : 10;
+
+    $chats = erLhcoreClassModelGroupChat::getList(array('limit' => $limitList, 'filter' => array('type' => 0)));
+
+    $memberOf = erLhcoreClassModelGroupChatMember::getList(array('sort' => 'jtime ASC', 'filter' => array('user_id' => $currentUser->getUserID())));
+
+    $groupsPrivates = array();
+    $groupsPrivateMembers = array();
+
+    foreach ($memberOf as $member) {
+        if (!isset($chats[$member->group_id])) {
+            $groupsPrivates[] = $member->group_id;
+        }
+        $groupsPrivateMembers[$member->group_id] = $member;
+    }
+
+    if (!empty($groupsPrivates)) {
+        $chatsPrivate = erLhcoreClassModelGroupChat::getList(array('limit' => $limitList, 'filterin' => array('id' => $groupsPrivates)));
+        $chats = $chatsPrivate + $chats;
+    }
+
+    foreach ($chats as $indexChat => $chat) {
+        $chats[$indexChat]->member = isset($groupsPrivateMembers[$chat->id]) ? $groupsPrivateMembers[$chat->id] : null;
+    }
+
+    erLhcoreClassChat::prefillGetAttributes($chats, array('time_front', 'jtime', 'is_member', 'ls_id', 'last_msg_id'), array('member','time','status','last_msg_op_id','last_msg'), array('do_not_clean' => true,'clean_ignore' => true));
+
+    $ReturnMessages['group_chats'] = array('list' => array_values($chats));
+
+}
+
 if ($myChatsEnabled == true) {
     /**
      * My chats chats
@@ -285,7 +326,7 @@ if ($closedTabEnabled == true) {
 	$chatsList[] = & $ReturnMessages['closed_chats']['list'];
 }
 
-if ($botTabEnabled == true) {
+if (is_array($Params['user_parameters_unordered']['w']) && in_array('bot_chats',$Params['user_parameters_unordered']['w']) && $botTabEnabled == true) {
     $limitList = is_numeric($Params['user_parameters_unordered']['limitb']) ? (int)$Params['user_parameters_unordered']['limitb'] : 10;
 
     $filter = array('ignore_fields' => erLhcoreClassChat::$chatListIgnoreField);
@@ -302,8 +343,8 @@ if ($botTabEnabled == true) {
 
     $chatsListAll = $chatsListAll+$chats;
 
-    erLhcoreClassChat::prefillGetAttributes($chats,array('time_created_front','department_name','plain_user_name','product_name'),array('product_id','product','department','time','status','user_id','user','additional_data','additional_data_array','chat_variables','chat_variables_array'),array('additional_columns' => $columnsAdditional));
-    $ReturnMessages['bot_chats'] = array('list' => array_values($chats));
+    erLhcoreClassChat::prefillGetAttributes($chats,array('time_created_front','department_name','plain_user_name','product_name','msg_v'),array('product_id','product','department','time','status','user_id','user','additional_data','additional_data_array','chat_variables','chat_variables_array'),array('additional_columns' => $columnsAdditional));
+    $ReturnMessages['bot_chats'] = array('last_id_identifier' => 'bot_chats', 'list' => array_values($chats));
     $chatsList[] = & $ReturnMessages['bot_chats']['list'];
 }
 
@@ -451,7 +492,7 @@ if ($canListOnlineUsers == true || $canListOnlineUsersAll == true) {
 	$ReturnMessages['online_op'] = array('list' => array_values($onlineOperators), 'op_cc' => $operatorsCount, 'op_sn' => $operatorsSend);
 }
 
-if ($unreadTabEnabled == true) {
+if ($unreadTabEnabled == true && is_array($Params['user_parameters_unordered']['w']) && in_array('unread_chats',$Params['user_parameters_unordered']['w'])) {
 
     $filter = array('ignore_fields' => erLhcoreClassChat::$chatListIgnoreField);
 
@@ -513,7 +554,7 @@ if ($userData->operation_admin != '') {
     erLhcoreClassUser::getSession()->update($userData);
 }
 
-$responseSync = array('v' => $version, 'error' => 'false', 'mac' => $my_active_chats, 'ou' => $ou, 'result' => $ReturnMessages, 'ho' => $userData->hide_online, 'im' => $userData->invisible_mode);
+$responseSync = array('v' => $version, 'error' => 'false', 'mac' => $my_active_chats, 'a_on' => $userData->always_on, 'ou' => $ou, 'result' => $ReturnMessages, 'ho' => $userData->hide_online, 'im' => $userData->invisible_mode);
 
 if (isset($currentOp) && $currentOp !== null) {
     $responseSync['ho'] = $currentOp->hide_online;

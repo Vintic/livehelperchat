@@ -27,7 +27,9 @@ class erLhcoreClassChatCommand
     	'!note' => 'self::notice',
     	'!hold' => 'self::hold',
     	'!gotobot' => 'self::goToBot',
-    	'!transferforce' => 'self::transferforce'
+    	'!transferforce' => 'self::transferforce',
+    	'!files' => 'self::enableFiles',
+    	'!stopfiles' => 'self::disableFiles',
     );
 
     private static function extractCommand($message)
@@ -53,7 +55,7 @@ class erLhcoreClassChatCommand
                 $params
             ));
         } else { // Perhaps some extension has implemented this command?
-            $commandResponse = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.customcommand', array('command' => $commandData['command'], 'params' => $params));
+            $commandResponse = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.customcommand', array('command' => $commandData['command'], 'argument' => $commandData['argument'], 'params' => $params));
             
             if (isset($commandResponse['processed']) && $commandResponse['processed'] == true) {
                 return $commandResponse;
@@ -61,8 +63,10 @@ class erLhcoreClassChatCommand
         }
         
         return array(
-            'processed' => false,
-            'process_status' => ''
+            'processed' => true,
+            'ignore' => true,
+            'process_status' => '',
+            'info' => 'Unknown command! [' . $commandData['command'] .']',
         );
     }
 
@@ -108,6 +112,66 @@ class erLhcoreClassChatCommand
     	);
     }
 
+    public static function disableFiles($params)
+    {
+        $chatVariables = $params['chat']->chat_variables_array;
+
+        if (isset($chatVariables['lhc_fu'])) {
+            unset($chatVariables['lhc_fu']);
+            $params['chat']->chat_variables = json_encode($chatVariables);
+            $params['chat']->chat_variables_array = $chatVariables;
+        }
+
+        $msg = new erLhcoreClassModelmsg();
+        $msg->msg = erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand','Files upload was disabled!');
+        $msg->chat_id = $params['chat']->id;
+        $msg->user_id = -1;
+        $msg->time = time();
+        $msg->name_support = $params['user']->name_support;
+        $msg->saveThis();
+
+        // Schedule UI Refresh
+        $params['chat']->operation .= "lhc_ui_refresh\n";
+
+        // Store permanently
+        $params['chat']->updateThis(array('update' => array('chat_variables', 'operation')));
+
+        return array(
+            'processed' => true,
+            'process_status' => '',
+            'raw_message' => '!stopfiles'
+        );
+    }
+
+    public static function enableFiles($params)
+    {
+        $chatVariables = $params['chat']->chat_variables_array;
+        $chatVariables['lhc_fu'] = 1;
+
+        $params['chat']->chat_variables = json_encode($chatVariables);
+        $params['chat']->chat_variables_array = $chatVariables;
+
+        $msg = new erLhcoreClassModelmsg();
+        $msg->msg = (isset($params['argument']) && $params['argument'] != '') ? $params['argument'] : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand','I have enabled files upload for you. [fupload]Upload a file[/fupload].');
+        $msg->chat_id = $params['chat']->id;
+        $msg->user_id = $params['user']->id;
+        $msg->time = time();
+        $msg->name_support = $params['user']->name_support;
+        $msg->saveThis();
+
+        // Schedule UI Refresh
+        $params['chat']->operation .= "lhc_ui_refresh\n";
+
+        // Store permanently
+        $params['chat']->updateThis(array('update' => array('chat_variables','operation')));
+
+        return array(
+            'processed' => true,
+            'process_status' => '',
+            'raw_message' => erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand','Files upload enabled.')
+        );
+    }
+
     /**
      * Just adds message from operator
      *
@@ -140,7 +204,8 @@ class erLhcoreClassChatCommand
         $params['chat']->last_op_msg_time = $params['chat']->last_user_msg_time = time();
 
         // All ok, we can make changes
-        erLhcoreClassChat::getSession()->update($params['chat']);
+        $params['chat']->updateThis(array('update' => array('last_op_msg_time','status_sub','last_user_msg_time')));
+
 
         return array(
             'custom_args' => array(
@@ -165,7 +230,7 @@ class erLhcoreClassChatCommand
 
         $params['chat']->status = erLhcoreClassModelChat::STATUS_BOT_CHAT;
         $params['chat']->last_op_msg_time = $params['chat']->last_user_msg_time = time();
-        erLhcoreClassChat::getSession()->update($params['chat']);
+        $params['chat']->updateThis(array('update' => array('status','last_op_msg_time','last_user_msg_time')));
 
         return array(
             'processed' => true,
@@ -287,15 +352,9 @@ class erLhcoreClassChatCommand
             // Schedule interface update
             $params['chat']->operation_admin .= "lhinst.updateVoteStatus(" . $params['chat']->id . ");";
         }
-        
-        // Update only
-        $db = ezcDbInstance::get();
-        $stmt = $db->prepare('UPDATE lh_chat SET phone = :phone, operation_admin = :operation_admin WHERE id = :id');
-        $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-        $stmt->bindValue(':phone', $params['chat']->phone, PDO::PARAM_STR);
-        $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-        $stmt->execute();
-        
+
+        $params['chat']->updateThis(array('update' => array('phone','operation_admin')));
+
         return array(
             'processed' => true,
             'process_status' => erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand', 'Phone changed!')
@@ -314,14 +373,8 @@ class erLhcoreClassChatCommand
         
         // Update object attribute
         $params['chat']->operation .= 'lhc_chat_redirect:' . str_replace(':', '__SPLIT__', $params['argument']) . "\n";
-        
-        // Update only
-        $db = ezcDbInstance::get();
-        $stmt = $db->prepare('UPDATE lh_chat SET operation = :operation WHERE id = :id');
-        $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-        $stmt->bindValue(':operation', $params['chat']->operation, PDO::PARAM_STR);
-        $stmt->execute();
-        
+        $params['chat']->updateThis(array('update' => array('operation')));
+
         return array(
             'processed' => true,
             'process_status' => erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand', 'User was redirected!')
@@ -333,12 +386,7 @@ class erLhcoreClassChatCommand
         // Schedule interface update
         $params['chat']->operation_admin .= "lhc.methodCall('lhc.translation','startTranslation',{'btn':$('#start-trans-btn-{$params['chat']->id}'),'chat_id':'{$params['chat']->id}'});";
         
-        // Update only
-        $db = ezcDbInstance::get();
-        $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-        $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-        $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-        $stmt->execute();
+        $params['chat']->updateThis(array('update' => array('operation_admin')));
         
         return array(
             'processed' => true,
@@ -352,12 +400,8 @@ class erLhcoreClassChatCommand
         $params['chat']->operation .= "lhc_screenshot\n";
         
         // Update only
-        $db = ezcDbInstance::get();
-        $stmt = $db->prepare('UPDATE lh_chat SET operation = :operation WHERE id = :id');
-        $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-        $stmt->bindValue(':operation', $params['chat']->operation, PDO::PARAM_STR);
-        $stmt->execute();
-        
+        $params['chat']->updateThis(array('update' => array('operation')));
+
         return array(
             'processed' => true,
             'process_status' => erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand', 'Screenshot was scheduled!')
@@ -373,12 +417,7 @@ class erLhcoreClassChatCommand
             // Schedule interface update
             $params['chat']->operation_admin .= "lhinst.redirectContact('{$params['chat']->id}');";
             
-            // Update only
-            $db = ezcDbInstance::get();
-            $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-            $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-            $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-            $stmt->execute();
+            $params['chat']->updateThis(array('update' => array('operation_admin')));
         }
         
         return array(
@@ -395,13 +434,7 @@ class erLhcoreClassChatCommand
             
             // Schedule interface update
             $params['chat']->operation_admin .= "lhinst.blockUser('{$params['chat']->id}');";
-            
-            // Update only
-            $db = ezcDbInstance::get();
-            $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-            $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-            $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-            $stmt->execute();
+            $params['chat']->updateThis(array('update' => array('operation_admin')));
         }
         
         return array(
@@ -478,14 +511,9 @@ class erLhcoreClassChatCommand
         } else {
             // Schedule interface update
             $params['chat']->operation_admin .= "lhinst.closeActiveChatDialog('{$params['chat']->id}',$('#tabs'),true);";
-            
-            // Update only
-            $db = ezcDbInstance::get();
-            $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-            $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-            $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-            $stmt->execute();
-            
+
+            $params['chat']->updateThis(array('update' => array('operation_admin')));
+
             return array(
                 'processed' => true,
                 'process_status' => erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand', 'Chat was closed!')
@@ -504,13 +532,8 @@ class erLhcoreClassChatCommand
         // Schedule interface update
         $params['chat']->operation_admin .= "lhinst.removeDialogTab('{$params['chat']->id}',$('#tabs'),true);";
                 
-        // Update only
-        $db = ezcDbInstance::get();
-        $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-        $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-        $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-        $stmt->execute();
-        
+        $params['chat']->updateThis(array('update' => array('operation_admin')));
+
         return array(
             'processed' => true,
             'process_status' => erTranslationClassLhTranslation::getInstance()->getTranslation('chat/chatcommand', 'Chat was closed!')
@@ -547,12 +570,7 @@ class erLhcoreClassChatCommand
             // Schedule interface update
             $params['chat']->operation_admin .= "lhinst.deleteChat('{$params['chat']->id}',$('#tabs'),true);";
             
-            // Update only
-            $db = ezcDbInstance::get();
-            $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-            $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-            $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-            $stmt->execute();
+            $params['chat']->updateThis(array('update' => array('operation_admin')));
             
             return array(
                 'processed' => true,
@@ -575,13 +593,7 @@ class erLhcoreClassChatCommand
         
         if (! isset($params['no_ui_update'])) {
             $params['chat']->operation_admin .= "lhinst.updateVoteStatus(" . $params['chat']->id . ");";
-            
-            // Update only
-            $db = ezcDbInstance::get();
-            $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-            $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-            $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-            $stmt->execute();
+            $params['chat']->updateThis(array('update' => array('operation_admin')));
         }
         
         return array(
@@ -601,13 +613,8 @@ class erLhcoreClassChatCommand
         
         if (! isset($params['no_ui_update'])) {
             $params['chat']->operation_admin .= "lhinst.updateVoteStatus(" . $params['chat']->id . ");";
-            
-            // Update only
-            $db = ezcDbInstance::get();
-            $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin WHERE id = :id');
-            $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-            $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-            $stmt->execute();
+
+            $params['chat']->updateThis(array('update' => array('operation_admin')));
         }
         
         return array(
@@ -626,14 +633,8 @@ class erLhcoreClassChatCommand
         if (! isset($params['no_ui_update'])) {
             $params['chat']->operation_admin .= "lhinst.updateVoteStatus(" . $params['chat']->id . ");";
         }
-      
-        // Update only
-        $db = ezcDbInstance::get();
-        $stmt = $db->prepare('UPDATE lh_chat SET operation_admin = :operation_admin,remarks = :remarks WHERE id = :id');
-        $stmt->bindValue(':id', $params['chat']->id, PDO::PARAM_INT);
-        $stmt->bindValue(':operation_admin', $params['chat']->operation_admin, PDO::PARAM_STR);
-        $stmt->bindValue(':remarks', $params['chat']->remarks, PDO::PARAM_STR);
-        $stmt->execute();
+
+        $params['chat']->updateThis(array('update' => array('operation_admin','remarks')));
               
         return array(
             'processed' => true,

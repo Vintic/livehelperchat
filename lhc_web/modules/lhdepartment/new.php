@@ -3,6 +3,16 @@
 $tpl = erLhcoreClassTemplate::getInstance( 'lhdepartment/new.tpl.php');
 $Departament = new erLhcoreClassModelDepartament();
 
+$userDepartments = true;
+
+/**
+ * Append user departments filter
+ * */
+if ($currentUser->hasAccessTo('lhdepartment','manageall') !== true)
+{
+    $userDepartments = erLhcoreClassUserDep::parseUserDepartmetnsForFilter($currentUser->getUserID());
+}
+
 if ( isset($_POST['Cancel_departament']) ) {
     erLhcoreClassModule::redirect('department/departments');
     exit;
@@ -35,12 +45,16 @@ if (isset($_POST['Save_departament']) || isset($_POST['Update_departament']))
 }
 
 $tpl->set('departament',$Departament);
+$tpl->set('departamentCustomWorkHours', json_encode(array(), JSON_HEX_APOS));
+$tpl->set('limitDepartments',$userDepartments !== true ? array('filterin' => array('id' => $userDepartments)) : array());
+
 
 $Result['content'] = $tpl->fetch();
 $Result['additional_footer_js'] = '<script src="'.erLhcoreClassDesign::designJS('js/angular.lhc.customdepartmentperiodgenerator.js').'"></script>';
 $Result['path'] = array(
 array('url' => erLhcoreClassDesign::baseurl('system/configuration'),'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('department/new','System configuration')),
-array('url' => erLhcoreClassDesign::baseurl('department/departments'),'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('department/new','Departments')),
+array('url' => erLhcoreClassDesign::baseurl('department/index'),'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('department/departments','Departments')),
+array('url' => erLhcoreClassDesign::baseurl('department/departments'),'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('department/departments','Departments list')),
 array('title' => erTranslationClassLhTranslation::getInstance()->getTranslation('department/new','New department')),
 )
 

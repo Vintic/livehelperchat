@@ -43,12 +43,10 @@ class erLhcoreClassGenericBotActionMatch_actions {
                 $filter = array('filter' => array('on_start_type' => $action['content']['on_start_type']));
             }
 
-
-
-            $event = erLhcoreClassGenericBotWorkflow::findTextMatchingEvent($payload, $chat->chat_variables_array['gbot_id'], $filter);
+            $event = erLhcoreClassGenericBotWorkflow::findTextMatchingEvent($payload, $chat->gbot_id, $filter, array('dep_id' => $chat->dep_id));
 
             if (!($event instanceof erLhcoreClassModelGenericBotTriggerEvent)) {
-                $event = erLhcoreClassGenericBotWorkflow::findEvent($payload, $chat->chat_variables_array['gbot_id'], 0, $filter);
+                $event = erLhcoreClassGenericBotWorkflow::findEvent($payload, $chat->gbot_id, 0, $filter, array('dep_id' => $chat->dep_id));
             }
 
             if ($event instanceof erLhcoreClassModelGenericBotTriggerEvent) {
@@ -68,10 +66,17 @@ class erLhcoreClassGenericBotActionMatch_actions {
                         'trigger_id' => $event->trigger_id
                     );
                 } elseif (isset($action['content']['on_start_type']) && $action['content']['on_start_type'] == 4) {
-                    $pendingAction = new erLhcoreClassModelGenericBotPendingEvent();
-                    $pendingAction->chat_id = $chat->id;
-                    $pendingAction->trigger_id = $event->trigger_id;
-                    $pendingAction->saveThis();
+                    for ($i = 0; $i < 3; $i++) {
+                        try {
+                            $pendingAction = new erLhcoreClassModelGenericBotPendingEvent();
+                            $pendingAction->chat_id = $chat->id;
+                            $pendingAction->trigger_id = $event->trigger_id;
+                            $pendingAction->saveThis();
+                            break;
+                        } catch (Exception $e) {
+                            usleep(500);
+                        }
+                    }
                 } elseif (isset($action['content']['on_start_type']) && $action['content']['on_start_type'] == 5) {
                     return array(
                         'status' => 'continue_all',

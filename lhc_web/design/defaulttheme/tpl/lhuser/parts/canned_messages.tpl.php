@@ -56,11 +56,11 @@ if ($pages->items_total > 0) {
 		<?php include(erLhcoreClassDesign::designtpl('lhkernel/alert_success.tpl.php'));?>
 <?php endif; ?>
 
-<form ng-controller="CannedMsgCtrl as cmsg"  ng-init='<?php if ($canned_msg->languages != '') : ?>cmsg.languages = <?php echo $canned_msg->languages?>;<?php endif;?>cmsg.dialects = <?php echo json_encode(array_values(erLhcoreClassModelSpeechLanguageDialect::getList()))?>' action="<?php if ($canned_msg->id > 0) : ?><?php echo erLhcoreClassDesign::baseurl('user/account')?>/(msg)/<?php echo $canned_msg->id?><?php endif;?>#canned" method="post">
+<form ng-controller="CannedMsgCtrl as cmsg"  ng-init='<?php if ($canned_msg->languages != '') : ?>cmsg.languages = <?php echo $canned_msg->languages?>;<?php endif;?>cmsg.dialects = <?php echo json_encode(array_values(erLhcoreClassModelSpeechLanguageDialect::getDialectsGrouped()))?>' action="<?php if ($canned_msg->id > 0) : ?><?php echo erLhcoreClassDesign::baseurl('user/account')?>/(tab)/canned/(msg)/<?php echo $canned_msg->id?><?php endif;?>#canned" method="post">
 
     <ul class="nav nav-pills" role="tablist" id="canned-main-tabs">
         <li class="nav-item" role="presentation" ><a class="nav-link active"href="#main" aria-controls="main" role="tab" data-toggle="tab" ><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Main');?></a></li>
-        <li class="nav-item" ng-repeat="lang in cmsg.languages" role="presentation"><a class="nav-link" href="#lang-{{$index}}" aria-controls="lang-{{$index}}" role="tab" data-toggle="tab" ><i class="material-icons mr-0">&#xE894;</i></a></li>
+        <li class="nav-item" ng-repeat="lang in cmsg.languages" role="presentation"><a class="nav-link" href="#lang-{{$index}}" aria-controls="lang-{{$index}}" role="tab" data-toggle="tab" ><i class="material-icons mr-0">&#xE894;</i> [{{cmsg.getLanguagesChecked(lang)}}]</a></li>
         <li class="nav-item" ><a class="nav-link" href="#addlanguage" ng-click="cmsg.addLanguage()"><i class="material-icons">&#xE145;</i><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/account','Add translation');?></a></li>
     </ul>
 
@@ -125,23 +125,7 @@ if ($pages->items_total > 0) {
 
         <div ng-repeat="lang in cmsg.languages" role="tabpanel" class="tab-pane" id="lang-{{$index}}">
 
-            <a class="btn btn-xs btn-danger" ng-click="cmsg.deleteLanguage(lang)"><i class="material-icons mr-0">&#xE15B;</i></a>
-            <br>
-            <div class="form-group">
-                <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/cannedmsg','Language');?>*</label>
-                <div class="row">
-                    <div class="col-3" ng-repeat="langDialtect in cmsg.dialects">
-                        <label class="fs12">
-                            <input name="languages[{{$parent.$index}}][]" type="checkbox" value="{{langDialtect.lang_code}}" ng-checked="lang.languages.indexOf(langDialtect.lang_code) > -1" ng-click="cmsg.toggleSelection(lang,langDialtect.lang_code)"> {{langDialtect.lang_name}} [{{langDialtect.lang_code}}]
-                        </label>
-                        <br ng-if="langDialtect.short_code"/>
-                        <label class="fs12" ng-if="langDialtect.short_code">
-                            <input name="languages[{{$parent.$index}}][]" type="checkbox" value="{{langDialtect.short_code}}" ng-checked="lang.languages.indexOf(langDialtect.short_code) > -1" ng-click="cmsg.toggleSelection(lang,langDialtect.short_code)"> {{langDialtect.lang_name}} [{{langDialtect.short_code}}]
-                        </label>
-                        <br/>
-                    </div>
-                </div>
-            </div>
+            <?php include(erLhcoreClassDesign::designtpl('lhabstract/custom/language_choose.tpl.php'));?>
 
             <ul class="nav nav-pills" role="tablist">
                 <li role="presentation" class="nav-item"><a class="nav-link active" href="#main-extension-lang-{{$index}}" aria-controls="main-extension-lang-{{$index}}" role="tab" data-toggle="tab" ><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/cannedmsg','Messages');?></a></li>
@@ -169,6 +153,8 @@ if ($pages->items_total > 0) {
         </div>
 
     </div>
+
+    <?php include(erLhcoreClassDesign::designtpl('lhkernel/csfr_token.tpl.php'));?>
 
 	<div class="btn-group" role="group" aria-label="...">
 		<input type="submit" class="btn btn-secondary" name="Save_canned_action" value="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('system/buttons','Save');?>"/>

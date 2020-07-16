@@ -59,7 +59,7 @@
         	
         	        <?php include(erLhcoreClassDesign::designtpl('lhsystem/configuration_links/chat_list.tpl.php'));?>
         
-        		    <?php if ($currentUser->hasAccessTo('lhchatarchive','archive')) : ?>
+        		    <?php if ($currentUser->hasAccessTo('lhchatarchive','archive') || $currentUser->hasAccessTo('lhchatarchive','configuration')) : ?>
         		    <?php include(erLhcoreClassDesign::designtpl('lhsystem/configuration_links/chat_archive.tpl.php'));?>
         		    <?php endif; ?>
         			
@@ -80,6 +80,7 @@
     		    <?php include(erLhcoreClassDesign::designtpl('lhsystem/configuration_links/theming.tpl.php'));?>
     		    <?php include(erLhcoreClassDesign::designtpl('lhsystem/configuration_links/bot.tpl.php'));?>
     		    <?php include(erLhcoreClassDesign::designtpl('lhsystem/configuration_links/notifications.tpl.php'));?>
+    		    <?php include(erLhcoreClassDesign::designtpl('lhsystem/configuration_links/group_chat.tpl.php'));?>
     		</div>
 		</div>
 	</div>

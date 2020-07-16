@@ -14,6 +14,11 @@ $ViewList['uploadfile'] = array(
 		'uparams' => array(),
 );
 
+$ViewList['fileoptions'] = array(
+		'params' => array('chat_id','hash'),
+		'uparams' => array(),
+);
+
 $ViewList['uploadfileonline'] = array(
 		'params' => array('vid'),
 		'uparams' => array(),
@@ -68,7 +73,7 @@ $ViewList['attatchfile'] = array(
 
 $ViewList['attatchfileimg'] = array(
 		'params' => array(),
-		'uparams' => array(),
+		'uparams' => array('persistent','user_id','visitor','upload_name'),
 		'functions' => array( 'use_operator' )
 );
 
@@ -80,7 +85,7 @@ $ViewList['attatchfilemail'] = array(
 
 $ViewList['list'] = array(
 		'params' => array(),
-		'uparams' => array('user_id', 'visitor', 'persistent'),
+		'uparams' => array('user_id', 'visitor', 'persistent','upload_name'),
 		'functions' => array( 'file_list' )
 );
 

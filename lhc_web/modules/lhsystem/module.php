@@ -9,7 +9,17 @@ $ViewList['htmlcode'] = array(
     'functions' => array( 'generatejs' )
 );
 
+$ViewList['htmlcodebeta'] = array(
+    'params' => array(),
+    'functions' => array( 'generatejs' )
+);
+
 $ViewList['embedcode'] = array(
+    'params' => array(),
+    'functions' => array( 'generatejs' )
+);
+
+$ViewList['hashargs'] = array(
     'params' => array(),
     'functions' => array( 'generatejs' )
 );
@@ -26,7 +36,7 @@ $ViewList['offlinesettings'] = array(
 
 $ViewList['usersactions'] = array(
     'params' => array(),
-    'functions' => array( 'use' )
+    'functions' => array( 'usersactions' )
 );
 
 $ViewList['expirecache'] = array(
@@ -86,5 +96,6 @@ $FunctionList['transferconfiguration'] = array('explain' => 'User can configure 
 $FunctionList['offlinesettings'] = array('explain' => 'Allow user to change offline settings');
 $FunctionList['configurerecaptcha'] = array('explain' => 'Allow user to configure recaptcha');
 $FunctionList['auditlog'] = array('explain' => 'Allow user to see audit log');
+$FunctionList['usersactions'] = array('explain' => 'Allow user to see operators real time chats statistic');
 
 ?>

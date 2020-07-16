@@ -148,6 +148,11 @@ class erLhcoreClassChatStatistic {
         	    $msgFilter['filtergte']['lh_msg.time'] = $filter['filtergte']['time'];
         	}
 
+            if (isset($msgFilter['filtergt']['user_id'])) {
+                unset($msgFilter['filtergt']['user_id']);
+                $msgFilter['filtergt']['lh_chat.user_id'] = $filter['filtergt']['user_id'];
+            }
+
             $yearStart = date('y');
             $monthStart = date('m');
 
@@ -163,21 +168,31 @@ class erLhcoreClassChatStatistic {
 
         		if (!isset($filter['filtergte']['time']) || $filter['filtergte']['time'] <= $dateUnix || date('Ym',$filter['filtergte']['time']) == date('Ym',$dateUnix))
                 {
-                    $numberOfChats[$dateUnix] = array (
-                            'closed' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_CLOSED_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))),
-                            'active' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_ACTIVE_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))),
-                            'operators' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_OPERATORS_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))),
-                            'pending' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))),
-                            'unanswered' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('unanswered_chat' => 1),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))),
 
-                            'msg_user' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filter' 	=> array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)'),
-                            'msg_operator' 		=> (int)erLhcoreClassChat::getCount(array('filtergt' => array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix)))+$msgFilter+$departmentMsgFilter,'lh_msg','count(lh_msg.id)'),
-                            'msg_system' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-1)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)'),
-                            'msg_bot' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)'),
+                    $numberOfChats[$dateUnix] = array ();
 
-                            'chatinitdefault' 	=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_DEFAULT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))),
-                            'chatinitproact' 	=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))),
-                    );
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('active',$paramsExecution['charttypes'])){
+                        $numberOfChats[$dateUnix]['closed'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_CLOSED_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['active'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_ACTIVE_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['operators'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_OPERATORS_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['pending'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))));
+                    }
+
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('unanswered',$paramsExecution['charttypes'])){
+                        $numberOfChats[$dateUnix]['unanswered'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('unanswered_chat' => 1),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))));
+                    }
+
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('proactivevsdefault',$paramsExecution['charttypes'])){
+                        $numberOfChats[$dateUnix]['chatinitdefault'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_DEFAULT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['chatinitproact'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))));
+                    }
+
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('msgtype',$paramsExecution['charttypes'])) {
+                        $numberOfChats[$dateUnix]['msg_user'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filter' 	=> array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                        $numberOfChats[$dateUnix]['msg_operator'] = (int)erLhcoreClassChat::getCount(array('filtergt' => array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix)))+$msgFilter+$departmentMsgFilter,'lh_msg','count(lh_msg.id)');
+                        $numberOfChats[$dateUnix]['msg_system'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-1)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                        $numberOfChats[$dateUnix]['msg_bot'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m\') = '. date('Ym',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                    }
                 }
         	}
         	
@@ -272,20 +287,31 @@ class erLhcoreClassChatStatistic {
 
                 if (!isset($filter['filtergte']['time']) || $filter['filtergte']['time'] <= $dateUnix || date('Ym',$filter['filtergte']['time']) == date('Ym',$dateUnix))
                 {
-                    $numberOfChats[$dateUnix] = array (
-                        'closed' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_CLOSED_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))),
-                        'active' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_ACTIVE_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))),
-                        'operators' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_OPERATORS_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))),
-                        'pending' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))),
-                        'unanswered' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('unanswered_chat' => 1),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))),
+                    $numberOfChats[$dateUnix] = array();
 
-                        'msg_user' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filter' 	=> array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%v\') = '. date('YW',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)'),
-                        'msg_operator' 		=> (int)erLhcoreClassChat::getCount(array('filtergt' => array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%v\') = '. date('YW',$dateUnix)))+$msgFilter+$departmentMsgFilter,'lh_msg','count(lh_msg.id)'),
-                        'msg_system' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-1,-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%v\') = '. date('YW',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)'),
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('active',$paramsExecution['charttypes'])){
+                        $numberOfChats[$dateUnix]['closed'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_CLOSED_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['active'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_ACTIVE_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['operators'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_OPERATORS_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['pending'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))));
+                    }
 
-                        'chatinitdefault' 	=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_DEFAULT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))),
-                        'chatinitproact' 	=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))),
-                    );
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('unanswered',$paramsExecution['charttypes'])){
+                        $numberOfChats[$dateUnix]['unanswered'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('unanswered_chat' => 1),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))));
+                    }
+
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('proactivevsdefault',$paramsExecution['charttypes'])){
+                        $numberOfChats[$dateUnix]['chatinitdefault'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_DEFAULT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))));
+                        $numberOfChats[$dateUnix]['chatinitproact'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))));
+                    }
+
+                    if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('msgtype',$paramsExecution['charttypes'])) {
+                        $numberOfChats[$dateUnix]['msg_user'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filter' 	=> array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%v\') = '. date('YW',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                        $numberOfChats[$dateUnix]['msg_operator'] = (int)erLhcoreClassChat::getCount(array('filtergt' => array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%v\') = '. date('YW',$dateUnix)))+$msgFilter+$departmentMsgFilter,'lh_msg','count(lh_msg.id)');
+                        $numberOfChats[$dateUnix]['msg_system'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-1,-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%v\') = '. date('YW',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                        $numberOfChats[$dateUnix]['msg_bot'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%v\') = '. date('YW',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                    }
+
                 }
             }
 
@@ -393,9 +419,9 @@ class erLhcoreClassChatStatistic {
         }
     }
     
-    public static function getNumberOfChatsPerDay($filter = array())
+    public static function getNumberOfChatsPerDay($filter = array(), $paramsExecution = array())
     {	
-        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.getnumberofchatsperday', array('filter' => $filter));
+        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.getnumberofchatsperday', array('params_execution' => $paramsExecution, 'filter' => $filter));
          
         if ($statusWorkflow === false) {
         	$numberOfChats = array();
@@ -452,20 +478,30 @@ class erLhcoreClassChatStatistic {
     
         	for ($i = 0; $i < $limitDays;$i++) {
         		$dateUnix = mktime(0,0,0,date('m',$startTimestamp),date('d',$startTimestamp)+$i,date('y',$startTimestamp));
-        		$numberOfChats[$dateUnix] = array (
-        				'closed' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_CLOSED_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))),    		
-        				'active' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_ACTIVE_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))),    		
-        				'operators' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_OPERATORS_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))),    		
-        				'pending' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))),    		
-        		        'unanswered' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('unanswered_chat' => 1),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))),
-    
-        				'msg_user' 			=> (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filter' 	=> array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)'),    		
-        				'msg_operator' 		=> (int)erLhcoreClassChat::getCount(array('filtergt' => array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))+$msgFilter+$departmentMsgFilter,'lh_msg','count(lh_msg.id)'),    		
-        				'msg_system' 		=> (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-1,-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)'),    		
-        				
-        				'chatinitdefault' 	=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_DEFAULT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))),    		
-        				'chatinitproact' 	=> (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))),    		
-        		);
+
+                if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('active',$paramsExecution['charttypes'])){
+                    $numberOfChats[$dateUnix]['closed'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_CLOSED_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))));
+                    $numberOfChats[$dateUnix]['active'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_ACTIVE_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))));
+                    $numberOfChats[$dateUnix]['operators'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_OPERATORS_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))));
+                    $numberOfChats[$dateUnix]['pending'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))));
+                }
+
+                if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('unanswered',$paramsExecution['charttypes'])){
+                    $numberOfChats[$dateUnix]['unanswered'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('unanswered_chat' => 1),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))));
+                }
+
+                if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('proactivevsdefault',$paramsExecution['charttypes'])){
+                    $numberOfChats[$dateUnix]['chatinitdefault'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_DEFAULT),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))));
+                    $numberOfChats[$dateUnix]['chatinitproact'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('filter' => array('chat_initiator' => erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE),'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))));
+                }
+
+                if (isset($paramsExecution['charttypes']) && is_array($paramsExecution['charttypes']) && in_array('msgtype',$paramsExecution['charttypes'])) {
+                    $numberOfChats[$dateUnix]['msg_user'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filter' 	=> array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                    $numberOfChats[$dateUnix]['msg_operator'] = (int)erLhcoreClassChat::getCount(array('filtergt' => array('lh_msg.user_id' => 0),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))+$msgFilter+$departmentMsgFilter,'lh_msg','count(lh_msg.id)');
+                    $numberOfChats[$dateUnix]['msg_system'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-1,-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                    $numberOfChats[$dateUnix]['msg_bot'] = (int)erLhcoreClassChat::getCount(array_merge_recursive(array('filterin' => array('lh_msg.user_id' => array(-2)),'customfilter' =>  array('FROM_UNIXTIME(lh_msg.time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))),$msgFilter,$departmentMsgFilter),'lh_msg','count(lh_msg.id)');
+                }
+
         	}
         	
         	return $numberOfChats;
@@ -947,6 +983,11 @@ class erLhcoreClassChatStatistic {
         	    $filter['filterin']['lh_msg.user_id'] = $filter['filterin']['user_id'];
         	    unset($filter['filterin']['user_id']);
         	}
+
+            if (isset($filter['filtergt']['user_id'])) {
+                $filter['filtergt']['lh_msg.user_id'] = $filter['filtergt']['user_id'];
+                unset($filter['filtergt']['user_id']);
+            }
         	
         	$generalFilter = self::formatFilter($filter);
         	    	 
@@ -1268,6 +1309,10 @@ class erLhcoreClassChatStatistic {
         
         $filterUsers = array();
 
+        if (isset($filtergte['filterin']['id'])) {
+            $filterUsers['filterin']['id'] = $filtergte['filterin']['id'];
+        }
+
         $userIdGroup = array();
 
         // Explicit user filter
@@ -1380,7 +1425,7 @@ class erLhcoreClassChatStatistic {
         if (!empty($userIdGroup)) {
             $filterUsers['filterin']['id'] = $userIdGroup;
         }
-        
+
         $userList = erLhcoreClassModelUser::getUserList($filterUsers);
         
         if (empty($userList)) {
@@ -1827,6 +1872,895 @@ class erLhcoreClassChatStatistic {
 
         return $stats;
     }
+
+    public static function nickGroupingDateWeek($filter = array(), $filterParams = array())
+    {
+        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.nickgroupingdateweek',array('params_execution' => $filterParams, 'filter' => $filter));
+
+        if ($statusWorkflow === false) {
+            $numberOfChats = array();
+            $departmentFilter = array();
+            $departmentMsgFilter = array();
+
+            // Message filter
+            $msgFilter = $filter;
+
+            /**
+             * If department filter provided we have to use strict filter with table names
+             * */
+            $departmentMsgFilter['innerjoin']['lh_chat'] = array('lh_msg.chat_id','lh_chat.id');
+
+            /**
+             * If user ID provided only provided user chat's has to take effect
+             * */
+            if (isset($msgFilter['filter']['user_id'])){
+                unset($msgFilter['filter']['user_id']);
+                $msgFilter['filter']['lh_chat.user_id'] = $filter['filter']['user_id'];
+            }
+
+            if (isset($msgFilter['filterin']['user_id'])){
+                unset($msgFilter['filterin']['user_id']);
+                $msgFilter['filterin']['lh_chat.user_id'] = $filter['filterin']['user_id'];
+            }
+
+            if (isset($msgFilter['filtergte']['time'])){
+                unset($msgFilter['filtergte']['time']);
+                $msgFilter['filtergte']['lh_msg.time'] = $filter['filtergte']['time'];
+            }
+
+            if (isset($msgFilter['filterlte']['time'])){
+                unset($msgFilter['filterlte']['time']);
+                $msgFilter['filterlte']['lh_msg.time'] = $filter['filterlte']['time'];
+            }
+
+            $startTimestamp = time()-(42*7*24*3600);
+
+            $limitDays = 42;
+
+            if (isset($filter['filterlte']['time']) && isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil(($filter['filterlte']['time'] - $filter['filtergte']['time'])/(24*3600*7));
+                if ($daysDifference <= 42 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil((time() - $filter['filtergte']['time'])/(24*3600*7));
+                if ($daysDifference <= 42 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filterlte']['time'])) {
+                $limitDays = 42;
+                $startTimestamp = $filter['filterlte']['time']-(42*7*24*3600);
+            }
+
+            $validGroupFields = array(
+                'nick' => '`nick`',
+                'uagent' => '`uagent`',
+                'device_type' => '`device_type`',
+            );
+
+            erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.validgroupfields', array('type' => 'sql', 'fields' => & $validGroupFields));
+
+            $weekStarted = false;
+            for ($i = 0; $i < $limitDays;$i++) {
+                $dateUnix = mktime(0,0,0,date('m',$startTimestamp),date('d',$startTimestamp)+($i*7),date('y',$startTimestamp));
+
+                if ($weekStarted == false) {
+                    $weekStarted = true;
+
+                    if (date('N', $dateUnix) != 1) {
+                        // Adjust start time to be it monday
+                        $startTimestamp = $startTimestamp - ((date('N', $startTimestamp)-1)*24*3600);
+
+                        continue; // First day is not a monday, skip to next week
+                    }
+                }
+
+                // This week has not ended, so exclude it
+                if (date('YW') == date('YW',$dateUnix) || time() < $dateUnix) {
+                    continue;
+                }
+
+                if (!isset($filter['filtergte']['time']) || $filter['filtergte']['time'] <= $dateUnix || date('Ym',$filter['filtergte']['time']) == date('Ym',$dateUnix))
+                {
+                    $numberOfChats[$dateUnix] = array();
+
+                    $groupField = '`nick`';
+                    if (isset($filterParams['group_field']) && key_exists($filterParams['group_field'], $validGroupFields)) {
+                        $groupField = $validGroupFields[$filterParams['group_field']];
+                    }
+
+                    $numberOfChats[$dateUnix] = array ();
+                    $numberOfChats[$dateUnix]['unique'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix)))),'lh_chat', 'count(distinct ' . $groupField . ')' );
+                }
+            }
+
+            return $numberOfChats;
+        } else {
+            return $statusWorkflow['list'];
+        }
+    }
+
+    public static function nickGroupingDateNickWeek($filter = array(), $filterParams = array())
+    {
+        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.nickgroupingdatenickweek',array('params_execution' => $filterParams, 'filter' => $filter));
+
+        if ($statusWorkflow === false) {
+            $numberOfChats = array();
+            $departmentFilter = array();
+            $departmentMsgFilter = array();
+
+            // Message filter
+            $msgFilter = $filter;
+
+            /**
+             * If department filter provided we have to use strict filter with table names
+             * */
+            $departmentMsgFilter['innerjoin']['lh_chat'] = array('lh_msg.chat_id','lh_chat.id');
+
+            /**
+             * If user ID provided only provided user chat's has to take effect
+             * */
+            if (isset($msgFilter['filter']['user_id'])){
+                unset($msgFilter['filter']['user_id']);
+                $msgFilter['filter']['lh_chat.user_id'] = $filter['filter']['user_id'];
+            }
+
+            if (isset($msgFilter['filterin']['user_id'])){
+                unset($msgFilter['filterin']['user_id']);
+                $msgFilter['filterin']['lh_chat.user_id'] = $filter['filterin']['user_id'];
+            }
+
+            if (isset($msgFilter['filtergte']['time'])){
+                unset($msgFilter['filtergte']['time']);
+                $msgFilter['filtergte']['lh_msg.time'] = $filter['filtergte']['time'];
+            }
+
+            if (isset($msgFilter['filterlte']['time'])){
+                unset($msgFilter['filterlte']['time']);
+                $msgFilter['filterlte']['lh_msg.time'] = $filter['filterlte']['time'];
+            }
+
+            $startTimestamp = time()-(42*7*24*3600);
+
+            $limitDays = 42;
+
+            if (isset($filter['filterlte']['time']) && isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil(($filter['filterlte']['time'] - $filter['filtergte']['time'])/(24*3600*7));
+                if ($daysDifference <= 42 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil((time() - $filter['filtergte']['time'])/(24*3600*7));
+                if ($daysDifference <= 42 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filterlte']['time'])) {
+                $limitDays = 42;
+                $startTimestamp = $filter['filterlte']['time']-(42*7*24*3600);
+            }
+
+            $validGroupFields = array(
+                'nick' => '`nick`',
+                'uagent' => '`uagent`',
+                'device_type' => '`device_type`',
+            );
+
+            erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.validgroupfields', array('type' => 'sql', 'fields' => & $validGroupFields));
+
+            $weekStarted = false;
+            for ($i = 0; $i < $limitDays;$i++) {
+                $dateUnix = mktime(0,0,0,date('m',$startTimestamp),date('d',$startTimestamp)+($i*7),date('y',$startTimestamp));
+
+                if ($weekStarted == false) {
+                    $weekStarted = true;
+
+                    if (date('N', $dateUnix) != 1) {
+                        // Adjust start time to be it monday
+                        $startTimestamp = $startTimestamp - ((date('N', $startTimestamp)-1)*24*3600);
+
+                        continue; // First day is not a monday, skip to next week
+                    }
+                }
+
+                // This week has not ended, so exclude it
+                if (date('YW') == date('YW',$dateUnix) || time() < $dateUnix) {
+                    continue;
+                }
+
+                if (!isset($filter['filtergte']['time']) || $filter['filtergte']['time'] <= $dateUnix || date('Ym',$filter['filtergte']['time']) == date('Ym',$dateUnix))
+                {
+                    $numberOfChats[$dateUnix] = array();
+
+                    $groupField = '`nick`';
+                    $attr = 'nick';
+                    if (isset($filterParams['group_field']) && key_exists($filterParams['group_field'], $validGroupFields)) {
+                        $groupField = $validGroupFields[$filterParams['group_field']];
+                        $attr = $filterParams['group_field'];
+                    }
+
+                    $justDemo = array_values(erLhcoreClassModelChat::getList(array_merge_recursive($departmentFilter,$filter,array('sort' => 'nick_count DESC', 'select_columns' => 'count(id) as nick_count', 'group' => $groupField, 'limit' => 10, 'customfilter' => array('FROM_UNIXTIME(time,\'%Y%v\') = '. date('YW',$dateUnix))))));
+
+                    $returnArray = array();
+
+                    foreach ($justDemo as $demoItem) {
+                        $returnArray['color'][] = json_encode(self::colorFromString($demoItem->{$attr}));
+
+                        if ($attr == 'device_type') {
+                            $returnArray['nick'][] = json_encode($demoItem->{$attr} == 0 ? 'PC' : ($demoItem->{$attr} == 1 ? 'Mobile' : 'Table'));
+                        } else {
+                            $returnArray['nick'][] = json_encode($demoItem->{$attr});
+                        }
+
+                        $returnArray['data'][] = $demoItem->virtual_nick_count;
+                    }
+
+                    $numberOfChats[$dateUnix] = $returnArray;
+                }
+            }
+
+            $returnReversed = array();
+
+            if ($limitDays < 10) {
+                $limitDays = 10;
+            }
+
+            foreach ($numberOfChats as $dateIndex => $returnData) {
+                for ($i = 0; $i < $limitDays; $i++) {
+                    $returnReversed[$i]['data'][] = isset($returnData['data'][$i]) ? $returnData['data'][$i] : 0;
+                    $returnReversed[$i]['color'][] = isset($returnData['color'][$i]) ? $returnData['color'][$i] : '""';
+                    $returnReversed[$i]['nick'][] = isset($returnData['nick'][$i]) ? $returnData['nick'][$i] : '""';
+                }
+            }
+
+            return array('labels' => $numberOfChats, 'data' => $returnReversed);
+
+        } else {
+            return $statusWorkflow['list'];
+        }
+    }
+
+    public static function nickGroupingDateDay($filter = array(), $filterParams = array())
+    {
+        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.nickgroupingdateday', array('filter' => $filter, 'params_execution' => $filterParams));
+
+        if ($statusWorkflow === false) {
+            $numberOfChats = array();
+            $departmentFilter = array();
+            $departmentMsgFilter = array();
+
+            // Message filter
+            $msgFilter = $filter;
+
+            /**
+             * If department filter provided we have to use strict filter with table names
+             * */
+            $departmentMsgFilter['innerjoin']['lh_chat'] = array('lh_msg.chat_id','lh_chat.id');
+
+            /**
+             * If user ID provided only provided user chat's has to take effect
+             * */
+            if (isset($msgFilter['filter']['user_id'])){
+                unset($msgFilter['filter']['user_id']);
+                $msgFilter['filter']['lh_chat.user_id'] = $filter['filter']['user_id'];
+            }
+
+            if (isset($msgFilter['filtergte']['time'])){
+                unset($msgFilter['filtergte']['time']);
+                $msgFilter['filtergte']['lh_msg.time'] = $filter['filtergte']['time'];
+            }
+
+            if (isset($msgFilter['filterlte']['time'])){
+                unset($msgFilter['filterlte']['time']);
+                $msgFilter['filterlte']['lh_msg.time'] = $filter['filterlte']['time'];
+            }
+
+            $startTimestamp = time()-(31*24*3600);
+
+            $limitDays = 31;
+
+            if (isset($filter['filterlte']['time']) && isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil(($filter['filterlte']['time'] - $filter['filtergte']['time'])/(24*3600));
+                if ($daysDifference <= 31 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+
+            } elseif (isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil((time() - $filter['filtergte']['time'])/(24*3600));
+                if ($daysDifference <= 31 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filterlte']['time'])) {
+                $limitDays = 31;
+                $startTimestamp = $filter['filterlte']['time']-(31*24*3600);
+            }
+
+            $validGroupFields = array(
+                'nick' => '`nick`',
+                'uagent' => '`uagent`',
+                'device_type' => '`device_type`',
+            );
+
+            erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.validgroupfields', array('type' => 'sql', 'fields' => & $validGroupFields));
+
+            for ($i = 0; $i < $limitDays;$i++) {
+                $dateUnix = mktime(0,0,0,date('m',$startTimestamp),date('d',$startTimestamp)+$i,date('y',$startTimestamp));
+
+                $groupField = '`nick`';
+                if (isset($filterParams['group_field']) && key_exists($filterParams['group_field'], $validGroupFields)) {
+                    $groupField = $validGroupFields[$filterParams['group_field']];
+                }
+
+                $numberOfChats[$dateUnix] = array ();
+                $numberOfChats[$dateUnix]['unique'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix)))),'lh_chat', 'count(distinct ' . $groupField . ')' );
+            }
+
+            return $numberOfChats;
+        } else {
+            return $statusWorkflow['list'];
+        }
+    }
+
+    public static function nickGroupingDateNickDay($filter = array(), $filterParams = array())
+    {
+        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.nickgroupingdatenickday', array('filter' => $filter, 'params_execution' => $filterParams));
+
+        if ($statusWorkflow === false) {
+            $numberOfChats = array();
+            $departmentFilter = array();
+            $departmentMsgFilter = array();
+
+            // Message filter
+            $msgFilter = $filter;
+
+            /**
+             * If department filter provided we have to use strict filter with table names
+             * */
+            $departmentMsgFilter['innerjoin']['lh_chat'] = array('lh_msg.chat_id','lh_chat.id');
+
+            /**
+             * If user ID provided only provided user chat's has to take effect
+             * */
+            if (isset($msgFilter['filter']['user_id'])){
+                unset($msgFilter['filter']['user_id']);
+                $msgFilter['filter']['lh_chat.user_id'] = $filter['filter']['user_id'];
+            }
+
+            if (isset($msgFilter['filtergte']['time'])){
+                unset($msgFilter['filtergte']['time']);
+                $msgFilter['filtergte']['lh_msg.time'] = $filter['filtergte']['time'];
+            }
+
+            if (isset($msgFilter['filterlte']['time'])){
+                unset($msgFilter['filterlte']['time']);
+                $msgFilter['filterlte']['lh_msg.time'] = $filter['filterlte']['time'];
+            }
+
+            $startTimestamp = time()-(31*24*3600);
+
+            $limitDays = 31;
+
+            if (isset($filter['filterlte']['time']) && isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil(($filter['filterlte']['time'] - $filter['filtergte']['time'])/(24*3600));
+                if ($daysDifference <= 31 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+
+            } elseif (isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil((time() - $filter['filtergte']['time'])/(24*3600));
+                if ($daysDifference <= 31 && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filterlte']['time'])) {
+                $limitDays = 31;
+                $startTimestamp = $filter['filterlte']['time']-(31*24*3600);
+            }
+
+            $validGroupFields = array(
+                'nick' => '`nick`',
+                'uagent' => '`uagent`',
+                'device_type' => '`device_type`',
+            );
+
+            erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.validgroupfields', array('type' => 'sql', 'fields' => & $validGroupFields));
+
+            for ($i = 0; $i < $limitDays;$i++) {
+                $dateUnix = mktime(0,0,0,date('m',$startTimestamp),date('d',$startTimestamp)+$i,date('y',$startTimestamp));
+
+                $groupField = '`nick`';
+                $attr = 'nick';
+                if (isset($filterParams['group_field']) && key_exists($filterParams['group_field'], $validGroupFields)) {
+                    $groupField = $validGroupFields[$filterParams['group_field']];
+                    $attr = $filterParams['group_field'];
+                }
+
+                $justDemo = array_values(erLhcoreClassModelChat::getList(array_merge_recursive($departmentFilter,$filter,array('sort' => 'nick_count DESC', 'select_columns' => 'count(id) as nick_count', 'group' => $groupField, 'limit' => 10, 'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m%d\') = '. date('Ymd',$dateUnix))))));
+
+                $returnArray = array();
+
+                foreach ($justDemo as $demoItem) {
+                    $returnArray['color'][] = json_encode(self::colorFromString($demoItem->{$attr}));
+
+                    if ($attr == 'device_type') {
+                        $returnArray['nick'][] = json_encode($demoItem->{$attr} == 0 ? 'PC' : ($demoItem->{$attr} == 1 ? 'Mobile' : 'Table'));
+                    } else {
+                        $returnArray['nick'][] = json_encode($demoItem->{$attr});
+                    }
+
+                    $returnArray['data'][] = $demoItem->virtual_nick_count;
+                }
+
+                $numberOfChats[$dateUnix] = $returnArray;
+            }
+
+            $returnReversed = array();
+
+            if ($limitDays < 10) {
+                $limitDays = 10;
+            }
+
+            foreach ($numberOfChats as $dateIndex => $returnData) {
+                for ($i = 0; $i < $limitDays; $i++) {
+                    $returnReversed[$i]['data'][] = isset($returnData['data'][$i]) ? $returnData['data'][$i] : 0;
+                    $returnReversed[$i]['color'][] = isset($returnData['color'][$i]) ? $returnData['color'][$i] : '""';
+                    $returnReversed[$i]['nick'][] = isset($returnData['nick'][$i]) ? $returnData['nick'][$i] : '""';
+                }
+            }
+
+            return array('labels' => $numberOfChats, 'data' => $returnReversed);
+
+        } else {
+            return $statusWorkflow['list'];
+        }
+    }
+
+    public static function nickGroupingDate($days = 30, $filter = array(), $filterParams = array())
+    {
+        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.nickgroupingdate', array('filter' => $filter, 'params_execution' => $filterParams));
+
+        if ($statusWorkflow === false) {
+
+        $numberOfChats = array();
+        $departmentFilter = array();
+        $departmentMsgFilter = array();
+
+        // Message filter
+        $msgFilter = $filter;
+
+        /**
+         * If department filter provided we have to use strict filter with table names
+         * */
+        $departmentMsgFilter['innerjoin']['lh_chat'] = array('lh_msg.chat_id','lh_chat.id');
+
+        /**
+         * If user ID provided only provided user chat's has to take effect
+         * */
+        if (isset($msgFilter['filter']['user_id'])){
+            unset($msgFilter['filter']['user_id']);
+            $msgFilter['filter']['lh_chat.user_id'] = $filter['filter']['user_id'];
+        }
+
+        if (isset($msgFilter['filterin']['user_id'])){
+            unset($msgFilter['filterin']['user_id']);
+            $msgFilter['filterin']['lh_chat.user_id'] = $filter['filterin']['user_id'];
+        }
+
+        if (isset($msgFilter['filtergte']['time'])){
+            unset($msgFilter['filtergte']['time']);
+            $msgFilter['filtergte']['lh_msg.time'] = $filter['filtergte']['time'];
+        }
+
+        $yearStart = date('y');
+        $monthStart = date('m');
+
+        if (isset($msgFilter['filterlte']['time'])){
+            unset($msgFilter['filterlte']['time']);
+            $msgFilter['filterlte']['lh_msg.time'] = $filter['filterlte']['time'];
+            $yearStart = date('y',$filter['filterlte']['time']);
+            $monthStart = date('m',$filter['filterlte']['time']);
+        }
+
+        $validGroupFields = array(
+            'nick' => '`nick`',
+            'uagent' => '`uagent`',
+            'device_type' => '`device_type`',
+        );
+
+        erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.validgroupfields', array('type' => 'sql', 'fields' => & $validGroupFields));
+
+        for ($i = 0; $i < 12;$i++) {
+            $dateUnix = mktime(0,0,0,$monthStart - $i,1, $yearStart);
+
+            if (!isset($filter['filtergte']['time']) || $filter['filtergte']['time'] <= $dateUnix || date('Ym',$filter['filtergte']['time']) == date('Ym',$dateUnix))
+            {
+                $groupField = '`nick`';
+                if (isset($filterParams['group_field']) && key_exists($filterParams['group_field'], $validGroupFields)) {
+                    $groupField = $validGroupFields[$filterParams['group_field']];
+                }
+
+                $numberOfChats[$dateUnix] = array ();
+                $numberOfChats[$dateUnix]['unique'] = (int)erLhcoreClassChat::getCount(array_merge_recursive($departmentFilter,$filter,array('customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix)))),'lh_chat', 'count(distinct ' . $groupField . ')' );
+
+            }
+        }
+
+        $numberOfChats = array_reverse($numberOfChats,true);
+
+        return $numberOfChats;
+
+        } else {
+            return $statusWorkflow['list'];
+        }
+    }
+
+    static function hsl2rgb($H, $S, $V) {
+        $H *= 6;
+        $h = intval($H);
+        $H -= $h;
+        $V *= 255;
+        $m = $V*(1 - $S);
+        $x = $V*(1 - $S*(1-$H));
+        $y = $V*(1 - $S*$H);
+        $a = [[$V, $x, $m], [$y, $V, $m],
+            [$m, $V, $x], [$m, $y, $V],
+            [$x, $m, $V], [$V, $m, $y]][$h];
+        return sprintf("#%02X%02X%02X", $a[0], $a[1], $a[2]);
+    }
+
+    static function hue($tstr) {
+        return unpack('L', hash('adler32', $tstr, true))[1];
+    }
+
+
+    public static function colorFromString($string)
+    {
+        $colors = [
+            '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+            // this list should be as long as practical to avoid duplicates
+        ];
+
+        // generate a partial hash of the string (a full hash is too long for the % operator)
+        $hash = substr(sha1($string), 0, 10);
+
+        // determine the color index
+        $colorIndex = hexdec($hash) % count($colors);
+
+        return $colors[$colorIndex];
+    }
+
+    public static function nickGroupingDateNick($days = 30, $filter = array(), $filterParams = array())
+    {
+        $statusWorkflow = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.nickgroupingdatenick', array('filter' => $filter, 'params_execution' => $filterParams));
+
+        if ($statusWorkflow === false) {
+        $numberOfChats = array();
+        $departmentFilter = array();
+        $departmentMsgFilter = array();
+
+        // Message filter
+        $msgFilter = $filter;
+
+        /**
+         * If department filter provided we have to use strict filter with table names
+         * */
+        $departmentMsgFilter['innerjoin']['lh_chat'] = array('lh_msg.chat_id','lh_chat.id');
+
+        /**
+         * If user ID provided only provided user chat's has to take effect
+         * */
+        if (isset($msgFilter['filter']['user_id'])){
+            unset($msgFilter['filter']['user_id']);
+            $msgFilter['filter']['lh_chat.user_id'] = $filter['filter']['user_id'];
+        }
+
+        if (isset($msgFilter['filterin']['user_id'])){
+            unset($msgFilter['filterin']['user_id']);
+            $msgFilter['filterin']['lh_chat.user_id'] = $filter['filterin']['user_id'];
+        }
+
+        if (isset($msgFilter['filtergte']['time'])){
+            unset($msgFilter['filtergte']['time']);
+            $msgFilter['filtergte']['lh_msg.time'] = $filter['filtergte']['time'];
+        }
+
+        $yearStart = date('y');
+        $monthStart = date('m');
+
+        if (isset($msgFilter['filterlte']['time'])){
+            unset($msgFilter['filterlte']['time']);
+            $msgFilter['filterlte']['lh_msg.time'] = $filter['filterlte']['time'];
+            $yearStart = date('y',$filter['filterlte']['time']);
+            $monthStart = date('m',$filter['filterlte']['time']);
+        }
+
+        $validGroupFields = array(
+            'nick' => '`nick`',
+            'uagent' => '`uagent`',
+            'device_type' => '`device_type`',
+        );
+
+        erLhcoreClassChatEventDispatcher::getInstance()->dispatch('statistic.validgroupfields', array('type' => 'sql', 'fields' => & $validGroupFields));
+
+        for ($i = 0; $i < 12;$i++) {
+            $dateUnix = mktime(0,0,0,$monthStart - $i,1, $yearStart);
+            if (!isset($filter['filtergte']['time']) || $filter['filtergte']['time'] <= $dateUnix || date('Ym',$filter['filtergte']['time']) == date('Ym',$dateUnix))
+            {
+                $numberOfChats[$dateUnix] = array ();
+
+                $groupField = '`nick`';
+                $attr = 'nick';
+                if (isset($filterParams['group_field']) && key_exists($filterParams['group_field'], $validGroupFields)) {
+                    $groupField = $validGroupFields[$filterParams['group_field']];
+                    $attr = $filterParams['group_field'];
+                }
+
+                $justDemo = array_values(erLhcoreClassModelChat::getList(array_merge_recursive($departmentFilter,$filter,array('sort' => 'nick_count DESC', 'select_columns' => 'count(id) as nick_count', 'group' => $groupField, 'limit' => 10, 'customfilter' =>  array('FROM_UNIXTIME(time,\'%Y%m\') = '. date('Ym',$dateUnix))))));
+
+                $returnArray = array();
+
+                foreach ($justDemo as $demoItem) {
+                    $returnArray['color'][] = json_encode(self::colorFromString($demoItem->{$attr}));
+
+                    if ($attr == 'device_type') {
+                        $returnArray['nick'][] = json_encode($demoItem->{$attr} == 0 ? 'PC' : ($demoItem->{$attr} == 1 ? 'Mobile' : 'Table'));
+                    } else {
+                        $returnArray['nick'][] = json_encode($demoItem->{$attr});
+                    }
+
+                    $returnArray['data'][] = $demoItem->virtual_nick_count;
+                }
+
+                $numberOfChats[$dateUnix] = $returnArray;
+            }
+        }
+
+        $numberOfChats = array_reverse($numberOfChats,true);
+
+        $returnReversed = array();
+
+        foreach ($numberOfChats as $dateIndex => $returnData) {
+            for ($i = 0; $i < 12; $i++) {
+                    $returnReversed[$i]['data'][] = isset($returnData['data'][$i]) ? $returnData['data'][$i] : 0;
+                    $returnReversed[$i]['color'][] = isset($returnData['color'][$i]) ? $returnData['color'][$i] : '""';
+                    $returnReversed[$i]['nick'][] = isset($returnData['nick'][$i]) ? $returnData['nick'][$i] : '""';
+            }
+        }
+
+        return array('labels' => $numberOfChats, 'data' => $returnReversed);
+    } else {
+            return $statusWorkflow['list'];
+        }
+    }
+
+    public static function getVisitorsStatistic($filter, $params) {
+
+        $statistic = array('visitors_new' => array());
+
+        $yearStart = date('y');
+        $monthStart = date('m');
+
+        if (isset($filter['filterlte']['time'])){
+            $yearStart = date('y',$filter['filterlte']['time']);
+            $monthStart = date('m',$filter['filterlte']['time']);
+        }
+
+        $daysGroupLimit = ($params['groupby'] == 2) ? 42 : 31;
+        $multiplier = ($params['groupby'] == 2) ? 7 : 1;
+        $limitDays = 12;
+
+        if ($params['groupby'] != 0)
+        {
+            $startTimestamp = time()-($daysGroupLimit*$multiplier*24*3600);
+
+            $limitDays = $daysGroupLimit;
+
+            if (isset($filter['filterlte']['time']) && isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil(($filter['filterlte']['time'] - $filter['filtergte']['time'])/(24*3600*$multiplier));
+                if ($daysDifference <= $daysGroupLimit && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filtergte']['time'])) {
+                $daysDifference = ceil((time() - $filter['filtergte']['time'])/(24*3600*$multiplier));
+                if ($daysDifference <= $daysGroupLimit && $daysDifference > 0) {
+                    $limitDays = $daysDifference;
+                    $startTimestamp = $filter['filtergte']['time'];
+                }
+            } elseif (isset($filter['filterlte']['time'])) {
+                $limitDays = $daysGroupLimit;
+                $startTimestamp = $filter['filterlte']['time']-($daysGroupLimit*$multiplier*24*3600);
+            }
+
+            $weekStarted = false;
+        }
+
+        $groupAttributes = array(
+            0 => array('db' => '\'%Y%m\'', 'php' => 'Ym','front' => 'Y.m'), // Month
+            1 => array('db' => '\'%Y%m%d\'', 'php' => 'Ymd','front' => 'Y.m.d'), // Day
+            2 => array('db' => '\'%Y%v\'', 'php' => 'YW','front' => 'Y.m.d') // Week
+        );
+
+        for ($i = 0; $i < $limitDays;$i++) {
+
+            // week
+            if ($params['groupby'] == 2) {
+                $startReturning = $dateUnix = mktime(0, 0, 0, date('m', $startTimestamp), date('d', $startTimestamp) + ($i * 7), date('y', $startTimestamp));
+
+                if ($weekStarted == false) {
+                    $weekStarted = true;
+
+                    if (date('N', $dateUnix) != 1) {
+                        // Adjust start time to be it monday
+                        $startReturning = $startTimestamp = $startTimestamp - ((date('N', $startTimestamp) - 1) * 24 * 3600);
+
+                        continue; // First day is not a monday, skip to next week
+                    }
+                }
+
+                // This week has not ended, so exclude it
+                if (date('YW') == date('YW', $dateUnix) || time() < $dateUnix) {
+                    continue;
+                }
+
+            // Day
+            } elseif ($params['groupby'] == 1) {
+                $startReturning = $dateUnix = mktime(0,0,0,date('m',$startTimestamp),date('d',$startTimestamp)+$i,date('y',$startTimestamp));
+
+            // Month
+            } else if ($params['groupby'] == 0) {
+                $startReturning = $dateUnix = mktime(0,0,0,$monthStart - $i,1, $yearStart);
+            }
+
+            if ((($params['groupby'] == 0 || $params['groupby'] == 2) && (!isset($filter['filtergte']['time']) || $filter['filtergte']['time'] <= $dateUnix || date('Ym',$filter['filtergte']['time']) == date('Ym',$dateUnix))) || $params['groupby'] == 1 )
+            {
+                // New visitors
+                if (in_array('visitors_new', $params['charttypes'])) {
+                    $filterNew = $filter;
+                    if (isset($filterNew['filterlte']['time'])) {
+                        $filterNew['filterlte']['first_visit'] = $filterNew['filterlte']['time'];
+                        unset($filterNew['filterlte']['time']);
+                    }
+
+                    if (isset($filterNew['filtergte']['time'])) {
+                        $filterNew['filtergte']['first_visit'] = $filterNew['filtergte']['time'];
+                        unset($filterNew['filtergte']['time']);
+                    }
+
+                    $filterFormated = array_merge_recursive($filterNew,array('customfilter' =>  array('FROM_UNIXTIME(first_visit,' . $groupAttributes[$params['groupby']]['db'] .') = '. date($groupAttributes[$params['groupby']]['php'],$dateUnix))));
+
+                    $statistic['visitors_new'][$dateUnix] = erLhcoreClassModelChatOnlineUser::getCount($filterFormated);
+                }
+
+                // Returning visitors
+                if (in_array('visitors_returning', $params['charttypes'])) {
+                    $filterNew = $filter;
+                    if (isset($filterNew['filterlte']['time'])) {
+                        $filterNew['filterlte']['last_visit'] = $filterNew['filterlte']['time'];
+                        unset($filterNew['filterlte']['time']);
+                    }
+
+                    if (isset($filterNew['filtergte']['time'])) {
+                        $filterNew['filtergte']['last_visit'] = $filterNew['filtergte']['time'];
+                        unset($filterNew['filtergte']['time']);
+                    }
+
+                    $filterNew['filterlte']['first_visit'] = $startReturning;
+
+                    $filterFormated = array_merge_recursive($filterNew,array('customfilter' =>  array('FROM_UNIXTIME(last_visit,' . $groupAttributes[$params['groupby']]['db'] .') = '. date($groupAttributes[$params['groupby']]['php'],$dateUnix))));
+
+                    $statistic['visitors_returning'][$dateUnix] = erLhcoreClassModelChatOnlineUser::getCount($filterFormated);
+                }
+
+                // Visitors by country
+                if (in_array('visitors_country', $params['charttypes'])) {
+                    $filterNew = $filter;
+                    if (isset($filterNew['filterlte']['time'])) {
+                        $filterNew['filterlte']['last_visit'] = $filterNew['filterlte']['time'];
+                        unset($filterNew['filterlte']['time']);
+                    }
+
+                    if (isset($filterNew['filtergte']['time'])) {
+                        $filterNew['filtergte']['last_visit'] = $filterNew['filtergte']['time'];
+                        unset($filterNew['filtergte']['time']);
+                    }
+
+                    $filterFormated = array_merge_recursive($filterNew,array('customfilter' =>  array('FROM_UNIXTIME(last_visit,' . $groupAttributes[$params['groupby']]['db'] .') = '. date($groupAttributes[$params['groupby']]['php'],$dateUnix))));
+                    $filterFormated['sort'] = 'total_records DESC';
+                    $filterFormated['group'] = 'user_country_name';
+                    $filterFormated['limit'] = 5;
+
+                    $justDemo = erLhcoreClassModelChatOnlineUser::getCount($filterFormated, '', false, 'user_country_name, count(id) as total_records', false, true);
+
+                    $returnArray = array();
+
+                    foreach ($justDemo as $demoItem) {
+                        $returnArray['color'][] = json_encode(self::hsl2rgb(self::hue($demoItem['user_country_name'])/0xFFFFFFFF, 0.7, 1));
+                        $returnArray['nick'][] = trim($demoItem['user_country_name'] ) != '' ? json_encode(trim(ucwords($demoItem['user_country_name']))) : json_encode('Unknown');
+                        $returnArray['data'][] = $demoItem['total_records'];
+                    }
+
+                    $statistic['visitors_country'][$dateUnix] = $returnArray;
+                }
+
+                // Visitors by city
+                if (in_array('visitors_city', $params['charttypes'])) {
+                    $filterNew = $filter;
+                    if (isset($filterNew['filterlte']['time'])) {
+                        $filterNew['filterlte']['last_visit'] = $filterNew['filterlte']['time'];
+                        unset($filterNew['filterlte']['time']);
+                    }
+
+                    if (isset($filterNew['filtergte']['time'])) {
+                        $filterNew['filtergte']['last_visit'] = $filterNew['filtergte']['time'];
+                        unset($filterNew['filtergte']['time']);
+                    }
+
+                    $filterFormated = array_merge_recursive($filterNew,array('customfilter' =>  array('city != \'\' AND FROM_UNIXTIME(last_visit,' . $groupAttributes[$params['groupby']]['db'] .') = '. date($groupAttributes[$params['groupby']]['php'],$dateUnix))));
+                    $filterFormated['sort'] = 'total_records DESC';
+                    $filterFormated['group'] = 'city';
+                    $filterFormated['limit'] = 5;
+
+                    $justDemo = erLhcoreClassModelChatOnlineUser::getCount($filterFormated, '', false, 'city, user_country_name, count(id) as total_records', false, true);
+
+                    $returnArray = array();
+
+                    foreach ($justDemo as $demoItem) {
+                        $returnArray['color'][] = json_encode(self::hsl2rgb(self::hue($demoItem['city'] . $demoItem['user_country_name'])/0xFFFFFFFF, 0.65, 1));
+                        $returnArray['nick'][] = trim($demoItem['user_country_name'] . $demoItem['city']) != '' ? json_encode(trim(ucwords($demoItem['user_country_name']) .' - '. ucwords(($demoItem['city'] != '' ? $demoItem['city'] : 'Unknown')))) : json_encode('Unknown');
+                        $returnArray['data'][] = $demoItem['total_records'];
+                    }
+
+                    $statistic['visitors_city'][$dateUnix] = $returnArray;
+                }
+
+            }
+        }
+
+        foreach (array('visitors_city','visitors_country') as $statisticIdentifier) {
+            if (!empty($statistic[$statisticIdentifier])) {
+                if ($params['groupby'] == 0) {
+                    $numberOfChats = array_reverse($statistic[$statisticIdentifier],true);
+                } else {
+                    $numberOfChats = $statistic[$statisticIdentifier];
+                }
+
+                $returnReversed = array();
+
+                if ($limitDays < 5) {
+                    $limitDays = 5;
+                }
+
+                foreach ($numberOfChats as $dateIndex => $returnData) {
+                    for ($i = 0; $i < $limitDays; $i++) {
+                        $returnReversed[$i]['data'][] = isset($returnData['data'][$i]) ? $returnData['data'][$i] : 0;
+                        $returnReversed[$i]['color'][] = isset($returnData['color'][$i]) ? $returnData['color'][$i] : '""';
+                        $returnReversed[$i]['nick'][] = isset($returnData['nick'][$i]) ? $returnData['nick'][$i] : '""';
+                    }
+                }
+
+                $returnReversed = array_slice($returnReversed,0,5);
+
+                $statistic[$statisticIdentifier] = array('group_date' => $groupAttributes[$params['groupby']]['front'], 'labels' => $numberOfChats, 'data' => $returnReversed);
+            }
+        }
+
+        $statistic['group_date'] = $groupAttributes[$params['groupby']]['front'];
+
+        if ($params['groupby'] == 0) {
+            $statistic['visitors_new'] = array_reverse($statistic['visitors_new'],true);
+            $statistic['visitors_returning'] = array_reverse($statistic['visitors_returning'],true);
+        }
+
+        return $statistic;
+    }
+
 }
 
 ?>

@@ -42,22 +42,27 @@ echo "Purged chats - ",erLhcoreClassChatWorkflow::automaticChatPurge(),"\n";
 
 $db = ezcDbInstance::get();
 
-try {
-    $assignWorkflowTimeout = erLhcoreClassModelChatConfig::fetch('assign_workflow_timeout')->current_value;
+$assignWorkflowTimeout = erLhcoreClassModelChatConfig::fetch('assign_workflow_timeout')->current_value;
 
-    if ($assignWorkflowTimeout > 0) {
-        foreach (erLhcoreClassChat::getList(array('sort' => 'priority DESC, id ASC', 'limit' => 500, 'filterlt' => array('time' => (time() - $assignWorkflowTimeout)),'filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT))) as $chat){
+if ($assignWorkflowTimeout > 0) {
+    foreach (erLhcoreClassChat::getList(array('sort' => 'priority DESC, id ASC', 'limit' => 500, 'filterlt' => array('time' => (time() - $assignWorkflowTimeout)),'filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT))) as $chat) {
+        try {
             $db->beginTransaction();
             $chat = erLhcoreClassModelChat::fetchAndLock($chat->id);
-            if ($chat->status == erLhcoreClassModelChat::STATUS_PENDING_CHAT) {
+            if (is_object($chat) && $chat->status == erLhcoreClassModelChat::STATUS_PENDING_CHAT) {
                 erLhcoreClassChatWorkflow::autoAssign($chat, $chat->department, array('cron_init' => true, 'auto_assign_timeout' => true));
                 erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.pending_process_workflow',array('chat' => & $chat));
             }
             $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+            throw $e;
         }
     }
+}
 
-    foreach (erLhcoreClassChat::getList(array('sort' => 'priority DESC, id ASC', 'limit' => 500, 'filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT))) as $chat){
+foreach (erLhcoreClassChat::getList(array('sort' => 'priority DESC, id ASC', 'limit' => 500, 'filter' => array('status' => erLhcoreClassModelChat::STATUS_PENDING_CHAT))) as $chat) {
+    try {
         $db->beginTransaction();
             $chat = erLhcoreClassModelChat::fetchAndLock($chat->id);
             if (is_object($chat) && $chat->status == erLhcoreClassModelChat::STATUS_PENDING_CHAT) {
@@ -65,11 +70,10 @@ try {
                 erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.pending_process_workflow',array('chat' => & $chat));
             }
         $db->commit();
+    } catch (Exception $e) {
+        $db->rollback();
+        throw $e;
     }
-
-} catch (Exception $e) {
-    $db->rollback();
-    throw $e;
 }
 
 // Inform visitors about unread messages
@@ -86,6 +90,9 @@ erLhcoreClassChatCleanup::departmentAvailabilityCleanup(array('cronjob' => true)
 
 // Update footprints table if required
 erLhcoreClassChatCleanup::updateFootprintBackground();
+
+// Cleanup Audit table if required
+erLhcoreClassChatCleanup::cleanupAuditLog();
 
 echo "Ended chat/workflow\n";
 

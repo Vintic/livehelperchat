@@ -18,14 +18,13 @@ if ($chat instanceof erLhcoreClassModelChat && erLhcoreClassChat::hasAccessToRea
                 throw new Exception('You do not have permission to open all pending chats.');
             }
 
-	        $db->beginTransaction();
-	        
     		$operatorAccepted = false;
     		$chatDataChanged = false;
     		
     	    if ($chat->user_id == 0 && $chat->status != erLhcoreClassModelChat::STATUS_BOT_CHAT && $chat->status != erLhcoreClassModelChat::STATUS_CLOSED_CHAT) {
     	        $currentUser = erLhcoreClassUser::instance();
-    	        $chat->user_id = $currentUser->getUserID();	     
+    	        $chat->user_id = $currentUser->getUserID();
+                $chat->status_sub = erLhcoreClassModelChat::STATUS_SUB_OWNER_CHANGED;
     	        $chatDataChanged = true;
     	    }
     	    
@@ -35,10 +34,12 @@ if ($chat instanceof erLhcoreClassModelChat && erLhcoreClassChat::hasAccessToRea
 
     	    	$chat->wait_time = time() - ($chat->pnd_time > 0 ? $chat->pnd_time : $chat->time);
     	    	$chat->user_id = $currentUser->getUserID();
-    	    	
+
+                $chat->status_sub = erLhcoreClassModelChat::STATUS_SUB_OWNER_CHANGED;
+
     	    	// User status in event of chat acceptance
     	    	$chat->usaccept = $userData->hide_online;
-    	    	
+
     	    	$operatorAccepted = true;
     	    	$chatDataChanged = true;
     	    }
@@ -69,7 +70,12 @@ if ($chat instanceof erLhcoreClassModelChat && erLhcoreClassChat::hasAccessToRea
     
     	        erLhcoreClassChat::getSession()->save($msg);
     	    }
-    	    
+
+            if (is_array($Params['user_parameters_unordered']['arg']) && in_array('background',$Params['user_parameters_unordered']['arg']) && $chat->user_id > 0 && $chat->user_id != $currentUser->getUserID()) {
+                // Avoid loading chat in the background if user is not chat owner
+                exit();
+            }
+
     	    // Update general chat attributes
             if ($chat->user_id == $currentUser->getUserID()) {
                 $chat->support_informed = 1;
@@ -82,10 +88,12 @@ if ($chat instanceof erLhcoreClassModelChat && erLhcoreClassChat::hasAccessToRea
     	        $chat->unanswered_chat = 0;
     	    }
 
-    	    erLhcoreClassChat::getSession()->update($chat);
-    	    
+            $chat->updateThis();
+
     	    $db->commit();
-    	    
+
+            $db->beginTransaction();
+
     	    session_write_close();
 
     	    if ($chatDataChanged == true) {
@@ -99,12 +107,21 @@ if ($chat instanceof erLhcoreClassModelChat && erLhcoreClassChat::hasAccessToRea
     	    	if ($chat->department !== false) {
     	    	    erLhcoreClassChat::updateDepartmentStats($chat->department);
     	    	}
-    	    	
+
+                if ($chat->auto_responder !== false) {
+                    $chat->auto_responder->chat = $chat;
+                    $chat->auto_responder->processAccept();
+                }
+
     	    	erLhcoreClassChatWorkflow::presendCannedMsg($chat);
     	    	$options = $chat->department->inform_options_array;
     	    	erLhcoreClassChatWorkflow::chatAcceptedWorkflow(array('department' => $chat->department,'options' => $options),$chat);
-    	    };
 
+    	    	// Just update if some extension modified data and forgot to update.
+                // Also this is solving strange issue after chat assignment it's assignment got reset.
+                // So this should help if not we will need something more.
+                $chat->updateThis();
+    	    };
     	    $db->commit();
     	    
     	    $tpl->set('chat',$chat);

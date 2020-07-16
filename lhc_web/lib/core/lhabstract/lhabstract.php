@@ -34,7 +34,12 @@ class erLhcoreClassAbstract
 
                     if (isset($attr['placeholder'])) {
                         $ngModel .= " placeholder=\"{$attr['placeholder']}\" ";
-                    };
+                    }
+
+                    if (isset($attr['maxlength'])) {
+                        $ngModel .= " maxlength=\"{$attr['maxlength']}\" ";
+                    }
+
                     return '<input class="form-control" ' . $ngModel . ' name="AbstractInput_' . $name . '" type="' . $attr['type'] . '" value="' . htmlspecialchars($value) . '" />';
                 }
                 break;
@@ -71,10 +76,13 @@ class erLhcoreClassAbstract
                         if (isset($object->{$attr['main_attr']}[$name])) {
                             $value = $object->{$attr['main_attr']}[$name];
                         } else {
-                            $value = '';
+                            $value = $defaultValue;
                         }
                     } else {
                         $value = $object->$name;
+                        if ($value == '') {
+                            $value = $defaultValue;
+                        }
                     }
 
                     $ngModel = isset($attr['nginit']) ? ' ng-init=\'ngModelAbstractInput_' . $name . '=' . json_encode($value, JSON_HEX_APOS) . '\' ng-model="ngModelAbstractInput_' . $name . '" ' : 'ng-non-bindable';
@@ -218,6 +226,11 @@ class erLhcoreClassAbstract
             } elseif (isset($field['validation_definition'])) {
 
                 $definition['AbstractInput_' . $key] = $field['validation_definition'];
+
+                if (isset($field['translatable']) && $field['translatable'] == true) {
+                    $definition['AbstractInput_' . $key . '_languages'] = new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw',null,FILTER_REQUIRE_ARRAY);
+                    $definition['AbstractInput_' . $key . '_content'] = new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw',null,FILTER_REQUIRE_ARRAY);
+                }
             }
         }
 
@@ -255,6 +268,10 @@ class erLhcoreClassAbstract
                     $object->$key = array();
                 }
 
+                if (isset($field['required']) && $field['required'] === true && empty($object->$key)) {
+                    $Errors[$key] = $field['trans'] . ' is required';
+                }
+
             } elseif ($field['type'] == 'file' || $field['type'] == 'filebinary') {
                 if (erLhcoreClassSearchHandler::isFile('AbstractInput_' . $key)) {
                     if (isset($field['backend_call_param'])) {
@@ -285,11 +302,47 @@ class erLhcoreClassAbstract
                         $object->{$key . '_' . strtolower($locale)} = $form->{'AbstractInput_' . $key . '_' . $locale};
                     }
                 } else {
+
                     if ($form->hasValidData('AbstractInput_' . $key)) {
+
                         if (isset($field['main_attr']) && !empty($field['main_attr'])) {
-                            $botConfiguration = $object->{$field['main_attr']};
-                            $botConfiguration[$key] = $form->{'AbstractInput_' . $key};
-                            $object->{$field['main_attr']} = $botConfiguration;
+                            $mainAttr = 'main_attr';
+                        } else if (isset($field['main_attr_lang']) && !empty($field['main_attr_lang'])) {
+                            $mainAttr = 'main_attr_lang';
+                        } else {
+                            $mainAttr = null;
+                        }
+
+                        if ($mainAttr !== null) {
+                            $botConfiguration = $object->{$field[$mainAttr]};
+
+                            if ($mainAttr == 'main_attr') {
+                                $botConfiguration[$key] = $form->{'AbstractInput_' . $key};
+                                $object->{$field[$mainAttr]} = $botConfiguration;
+                            } else {
+                                $object->{$key} = $form->{'AbstractInput_' . $key};
+                            }
+
+                            // Multi language support
+                            if (isset($field['translatable']) && $field['translatable'] == true) {
+                                $languagesData = array();
+
+                                if ( $form->hasValidData( 'AbstractInput_' . $key . '_languages' ) && !empty($form->{'AbstractInput_' . $key . '_languages'}) )
+                                {
+                                    foreach ($form->{'AbstractInput_' . $key . '_languages'} as $index => $languages) {
+                                        $languagesData[] = array(
+                                            'content' => $form->{'AbstractInput_' . $key . '_content'}[$index],
+                                            'languages' => $form->{'AbstractInput_' . $key . '_languages'}[$index],
+                                        );
+                                    }
+                                    $botConfiguration[$key . '_lang'] = $languagesData;
+                                    $object->{$field[$mainAttr]} = $botConfiguration;
+                                } elseif (isset($botConfiguration[$key . '_lang'])) {
+                                    unset($botConfiguration[$key . '_lang']);
+                                    $object->{$field[$mainAttr]} = $botConfiguration;
+                                }
+                            }
+
                         } else {
                             $object->$key = $form->{'AbstractInput_' . $key};
                         }
@@ -324,10 +377,45 @@ class erLhcoreClassAbstract
                     $object->$key = serialize($partsTranslated);
 
                 } else {
+
                     if (isset($field['main_attr']) && !empty($field['main_attr'])) {
-                        $botConfiguration = $object->{$field['main_attr']};
-                        $botConfiguration[$key] = $form->{'AbstractInput_' . $key};
-                        $object->{$field['main_attr']} = $botConfiguration;
+                        $mainAttr = 'main_attr';
+                    } else if (isset($field['main_attr_lang']) && !empty($field['main_attr_lang'])) {
+                        $mainAttr = 'main_attr_lang';
+                    } else {
+                        $mainAttr = null;
+                    }
+
+                    if ($mainAttr !== null) {
+                        $botConfiguration = $object->{$field[$mainAttr]};
+
+                        if ($mainAttr == 'main_attr') {
+                            $botConfiguration[$key] = $form->{'AbstractInput_' . $key};
+                            $object->{$field[$mainAttr]} = $botConfiguration;
+                        } else {
+                            $object->{$key} = $form->{'AbstractInput_' . $key};
+                        }
+
+                        // Multi language support
+                        if (isset($field['translatable']) && $field['translatable'] == true) {
+                            $languagesData = array();
+
+                            if ( $form->hasValidData( 'AbstractInput_' . $key . '_languages' ) && !empty($form->{'AbstractInput_' . $key . '_languages'}) )
+                            {
+                                foreach ($form->{'AbstractInput_' . $key . '_languages'} as $index => $languages) {
+                                    $languagesData[] = array(
+                                        'content' => $form->{'AbstractInput_' . $key . '_content'}[$index],
+                                        'languages' => $form->{'AbstractInput_' . $key . '_languages'}[$index],
+                                    );
+                                }
+                                $botConfiguration[$key . '_lang'] = $languagesData;
+                                $object->{$field[$mainAttr]} = $botConfiguration;
+                            } elseif (isset($botConfiguration[$key . '_lang'])) {
+                                unset($botConfiguration[$key . '_lang']);
+                                $object->{$field[$mainAttr]} = $botConfiguration;
+                            }
+                        }
+
                     } else {
                         $object->$key = $form->{'AbstractInput_' . $key};
                     }

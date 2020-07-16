@@ -160,6 +160,42 @@ $fieldsSearch['user_ids'] = array (
     )
 );
 
+$fieldsSearch['bot_ids'] = array (
+    'type' => 'text',
+    'trans' => 'Bot ID',
+    'required' => false,
+    'valid_if_filled' => false,
+    'filter_type' => 'filterin',
+    'filter_table_field' => 'gbot_id',
+    'validation_definition' => new ezcInputFormDefinitionElement(
+        ezcInputFormDefinitionElement::OPTIONAL, 'int', array( 'min_range' => 0), FILTER_REQUIRE_ARRAY
+    )
+);
+
+$fieldsSearch['chart_type'] = array (
+    'type' => 'text',
+    'trans' => 'Department',
+    'required' => false,
+    'valid_if_filled' => false,
+    'filter_type' => false,
+    'filter_table_field' => 'chart_type',
+    'validation_definition' => new ezcInputFormDefinitionElement(
+        ezcInputFormDefinitionElement::OPTIONAL, 'string', array(), FILTER_REQUIRE_ARRAY
+    )
+);
+
+$fieldsSearch['group_field'] = array (
+    'type' => 'text',
+    'trans' => 'Group Field',
+    'required' => false,
+    'valid_if_filled' => false,
+    'filter_type' => false,
+    'filter_table_field' => 'group_field',
+    'validation_definition' => new ezcInputFormDefinitionElement(
+        ezcInputFormDefinitionElement::OPTIONAL, 'string', array()
+    )
+);
+
 $fieldsSearch['group_ids'] = array (
     'type' => 'text',
     'trans' => 'Group',
@@ -169,6 +205,54 @@ $fieldsSearch['group_ids'] = array (
     'filter_table_field' => 'dep_id',
     'validation_definition' => new ezcInputFormDefinitionElement(
         ezcInputFormDefinitionElement::OPTIONAL, 'int', array( 'min_range' => 1), FILTER_REQUIRE_ARRAY
+    )
+);
+
+$fieldsSearch['no_operator'] = array (
+    'type' => 'boolean',
+    'trans' => 'groupby',
+    'required' => false,
+    'valid_if_filled' => false,
+    'filter_type' => 'manual',
+    'filter_table_field' => ['filter' => ['user_id' => 0]],
+    'validation_definition' => new ezcInputFormDefinitionElement(
+        ezcInputFormDefinitionElement::OPTIONAL, 'boolean'
+    )
+);
+
+$fieldsSearch['has_operator'] = array (
+    'type' => 'boolean',
+    'trans' => 'groupby',
+    'required' => false,
+    'valid_if_filled' => false,
+    'filter_type' => 'manual',
+    'filter_table_field' => ['filtergt' => ['user_id' => 0]],
+    'validation_definition' => new ezcInputFormDefinitionElement(
+        ezcInputFormDefinitionElement::OPTIONAL, 'boolean'
+    )
+);
+
+$fieldsSearch['with_bot'] = array (
+    'type' => 'boolean',
+    'trans' => 'groupby',
+    'required' => false,
+    'valid_if_filled' => false,
+    'filter_type' => 'manual',
+    'filter_table_field' => ['filtergt' => ['gbot_id' => 0]],
+    'validation_definition' => new ezcInputFormDefinitionElement(
+        ezcInputFormDefinitionElement::OPTIONAL, 'boolean'
+    )
+);
+
+$fieldsSearch['without_bot'] = array (
+    'type' => 'boolean',
+    'trans' => 'groupby',
+    'required' => false,
+    'valid_if_filled' => false,
+    'filter_type' => 'manual',
+    'filter_table_field' => ['filter' => ['gbot_id' => 0]],
+    'validation_definition' => new ezcInputFormDefinitionElement(
+        ezcInputFormDefinitionElement::OPTIONAL, 'boolean'
     )
 );
 

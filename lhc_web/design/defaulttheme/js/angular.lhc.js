@@ -30,8 +30,8 @@ services.factory('LiveHelperChatFactory', ['$http','$q',function ($http, $q) {
 			 } else {
 				 deferred.resolve(data.data);
 			 }			 
-		},function(){
-			deferred.reject('error');
+		},function(internalError) {
+			deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
 		});		
 		return deferred.promise;
 	};
@@ -44,8 +44,8 @@ services.factory('LiveHelperChatFactory', ['$http','$q',function ($http, $q) {
 			 } else {
 				 deferred.resolve(data.data);
 			 }			 
-		},function(){
-			deferred.reject('error');
+		},function(internalError){
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
 		});		
 		return deferred.promise;
 	};
@@ -58,8 +58,8 @@ services.factory('LiveHelperChatFactory', ['$http','$q',function ($http, $q) {
 			 } else {
 				 deferred.resolve(data.data);
 			 }			 
-		},function(){
-			deferred.reject('error');
+		},function(internalError){
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
 		});		
 		return deferred.promise;
 	};
@@ -72,8 +72,8 @@ services.factory('LiveHelperChatFactory', ['$http','$q',function ($http, $q) {
 			} else {
 				deferred.resolve(data.data);
 			}
-		},function(){
-			deferred.reject('error');
+		},function(internalError){
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
 		});
 		return deferred.promise;
 	};
@@ -82,8 +82,8 @@ services.factory('LiveHelperChatFactory', ['$http','$q',function ($http, $q) {
 		var deferred = $q.defer();
 		$http.get(WWW_DIR_JAVASCRIPT + 'user/setinactive/'+status).then(function(data) {
 			deferred.resolve(data.data);
-		},function() {
-			deferred.reject('error');
+		},function(internalError) {
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
 		});
 		return deferred.promise;
 	};
@@ -92,8 +92,18 @@ services.factory('LiveHelperChatFactory', ['$http','$q',function ($http, $q) {
         var deferred = $q.defer();
         $http.get(WWW_DIR_JAVASCRIPT + 'user/setoffline/'+status).then(function(data) {
             deferred.resolve(data.data);
-        },function(data) {
-            deferred.reject(data.data);
+        },function(internalError) {
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
+        });
+        return deferred.promise;
+	};
+
+	this.setAlwaysOnlineMode = function(status) {
+        var deferred = $q.defer();
+        $http.get(WWW_DIR_JAVASCRIPT + 'user/setalwaysonline/'+status).then(function(data) {
+            deferred.resolve(data.data);
+        },function(internalError) {
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
         });
         return deferred.promise;
 	};
@@ -103,18 +113,38 @@ services.factory('LiveHelperChatFactory', ['$http','$q',function ($http, $q) {
         var deferred = $q.defer();
         $http.get(WWW_DIR_JAVASCRIPT + 'user/setinvisible/'+status).then(function(data) {
             deferred.resolve(data.data);
-        },function(data) {
-            deferred.reject(data.data);
+        },function(internalError) {
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
         });
         return deferred.promise;
     };
 
 	this.getActiveOperatorChat = function(user_id) {
         var deferred = $q.defer();
-        $http.get(WWW_DIR_JAVASCRIPT + 'chat/startchatwithoperator/'+user_id+'/(mode)/check').then(function(data) {
+        $http.get(WWW_DIR_JAVASCRIPT + 'groupchat/startchatwithoperator/'+user_id).then(function(data) {
         	deferred.resolve(data.data);
-        },function(){
-            deferred.reject('error');
+        },function(internalError){
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
+        });
+        return deferred.promise;
+    };
+
+	this.rejectGroupChat = function(chatId) {
+        var deferred = $q.defer();
+        $http.get(WWW_DIR_JAVASCRIPT + 'groupchat/leave/'+chatId).then(function(data) {
+        	deferred.resolve(data.data);
+        },function(internalError){
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
+        });
+        return deferred.promise;
+    };
+
+	this.newGroupChat = function(name,publicChat) {
+        var deferred = $q.defer();
+        $http.post(WWW_DIR_JAVASCRIPT + 'groupchat/newgroupajax/',{"name":name,"public":publicChat}).then(function(data) {
+        	deferred.resolve(data.data);
+        },function(internalError){
+            deferred.reject(typeof internalError.status !== 'undefined' ? '['+internalError.status+']' : '[0]');
         });
         return deferred.promise;
     };
@@ -162,7 +192,9 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 	$scope.custom_list_2_expanded = true;
 	$scope.custom_list_3_expanded = true;
 	$scope.custom_list_4_expanded = true;
-	
+
+	$scope.current_user_id = confLH.user_id;
+
 	// Parameters for back office sync
 	
 	var _that = this;
@@ -204,6 +236,7 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 	this.limitc = this.restoreLocalSetting('limitc','10',false);
 	this.limitd = this.restoreLocalSetting('limitd','10',false);
 	this.limitmc = this.restoreLocalSetting('limitmc','10',false);
+	this.limitgc = this.restoreLocalSetting('limitgc','10',false);
 
 	// Active chat's operators filter
 	this.activeu = this.restoreLocalSetting('activeu',[],true);
@@ -216,6 +249,8 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
     this.lhcVersion = 0;
     this.lhcVersionCounter = 8;
     this.lhcPendingRefresh = false;
+    this.lhcConnectivityProblem = false;
+    this.lhcConnectivityProblemExplain = '';
 
 	// Stores last ID of unread/pending chat id
 	this.lastidEvent = 0;
@@ -226,6 +261,7 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 	this.userDepartmentsGroups = [];
 	this.userGroups = [];
 	this.userList = [];
+	this.widgets = [];
 	this.additionalColumns = [];
 
 	this.departmentd = this.restoreLocalSetting('departmentd',[],true);
@@ -291,8 +327,16 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 	// Sync icons statuses
     this.hideOnline = false;
     this.hideInvisible = false;
+    this.alwaysOnline = false;
+    this.bot_st = {};
 
-    this.changeVisibility = function() {
+    this.changeVisibility = function(e) {
+
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+
         LiveHelperChatFactory.changeVisibility(!_that.hideInvisible == true ? 'true' : 'false').then( function(data) {
             if (data.error === false) {
             	_that.hideInvisible = !_that.hideInvisible;
@@ -306,7 +350,32 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
         });
 	};
 
-    this.changeOnline = function() {
+    this.changeAlwaysOnline = function(e) {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+
+        LiveHelperChatFactory.setAlwaysOnlineMode(!_that.alwaysOnline == true ? 'true' : 'false').then(function(data){
+            if (data.error === false) {
+                _that.alwaysOnline = !_that.alwaysOnline;
+            } else if (typeof data.msg !== 'undefined') {
+                alert(data.msg);
+            } else {
+                alert(data);
+            }
+        },function(error) {
+            alert('We could not change your status! ' + error);
+        });
+    };
+
+    this.changeOnline = function(e) {
+
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+
         LiveHelperChatFactory.setOnlineMode(!_that.hideOnline == true ? 'true' : 'false').then(function(data){
         	if (data.error === false) {
                 _that.hideOnline = !_that.hideOnline;
@@ -316,7 +385,7 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
                 alert(data);
 			}
 		},function(error) {
-            alert('We could not change your status!');
+            alert('We could not change your status! ' + error);
         });
 	};
 
@@ -407,6 +476,11 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 		filter += '/(limitd)/'+parseInt(_that.limitd);
 		filter += '/(limitmc)/'+parseInt(_that.limitmc);
 		filter += '/(limitb)/'+parseInt(_that.limitb);
+		filter += '/(limitgc)/'+parseInt(_that.limitgc);
+
+        if (typeof _that.widgetsActive == 'object' && _that.widgetsActive.length > 0) {
+            filter += '/(w)/'+_that.widgetsActive.join('/');
+        }
 
 		if (typeof _that.activeu == 'object' && _that.activeu.length > 0) {
 			filter += '/(activeu)/'+_that.activeu.join('/');			
@@ -754,6 +828,13 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 		};
 	});
 
+	$scope.$watch('lhc.limitgc', function(newVal,oldVal) {
+		if (newVal != oldVal) {
+			_that.storeLocalSetting('limitgc',newVal);
+			$scope.loadChatList();
+		};
+	});
+
 	$scope.$watch('lhc.limitd', function(newVal,oldVal) {
 		if (newVal != oldVal) {
 			_that.storeLocalSetting('limitd',newVal);
@@ -776,7 +857,11 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 			$scope.loadChatList();
 		};
 	});
-	
+
+	$scope.syncDisabled = function(disabled) {
+        _that.blockSync = disabled;
+    }
+
 	$scope.loadChatList = function() {
 		
 		if (localStorage) {
@@ -807,8 +892,20 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 		}
 		
 		clearTimeout($scope.timeoutControl);
-		LiveHelperChatFactory.loadChatList($scope.getSyncFilter()).then(function(data){	
-																	
+		LiveHelperChatFactory.loadChatList($scope.getSyncFilter()).then(function(data){
+
+                if (_that.blockSync == true) {
+                    clearTimeout($scope.timeoutControl);
+                    $scope.timeoutControl = setTimeout(function(){
+                        $scope.loadChatList();
+                    },confLH.back_office_sinterval);
+                    return;
+                }
+
+		        if (_that.lhcConnectivityProblem == true) {
+                    _that.lhcConnectivityProblem = false;
+                }
+
 				ee.emitEvent('eventLoadChatList', [data, $scope, _that]);
 				
 				if (typeof data.items_processed == 'undefined') {
@@ -842,7 +939,15 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 										}
 									}
 								});
-							}
+							} else if (key == 'group_chats') {
+                                if (tabs.length > 0 && confLH.auto_join_private  == 1) {
+                                    item.list.forEach(function (chat) {
+                                        if (chat.type == 1 && chat.jtime == 0 && $('#chat-tab-link-gc' + chat.id).length == 0) {
+                                            lhinst.startGroupChat(chat.id,tabs,LiveHelperChatFactory.truncate(chat.name,10),true);
+                                        }
+                                    });
+                                }
+                            }
                         }
 
 						if ( item.last_id_identifier ) {
@@ -862,7 +967,14 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 		                        var userId = (typeof itemList.user_id !== 'undefined' ? itemList.user_id : 0);
 		                       		                        
 		                        var identifierElement = itemList.id + '_' + userId;
-		                        		
+
+		                        // No need to store anything as chat is still not notifable
+		                        if (item.last_id_identifier == 'bot_chats') {
+		                            if (!(itemList.msg_v && itemList.msg_v > _that.bot_st.msg_nm && _that.bot_st.bot_notifications == 1)) {
+                                        return;
+                                    }
+                                }
+
 		                        currentStatusNotifications.push(identifierElement);
 		                  	
 		                        if (typeof _that.statusNotifications[item.last_id_identifier] == 'undefined') {
@@ -871,7 +983,7 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 
 		                        if (_that.isListLoaded == true && (chatsSkipped == 0 || itemList.status_sub_sub === 2) && ((_that.statusNotifications[item.last_id_identifier].indexOf(identifierElement) == -1 && userId == 0 && confLH.ownntfonly == 0) || (_that.statusNotifications[item.last_id_identifier].indexOf(identifierElement) == -1 && userId == confLH.user_id)) ) {
 		                        	if (lhinst.chatsSynchronising.indexOf(parseInt(itemList.id)) === -1) { // Don't show notification if chat is under sync already
-		                        		chatsToNotify.push(itemList.id);
+                                         chatsToNotify.push(itemList.id);
 		                        	}
 		                        } else {
 		                        	chatsSkipped++;
@@ -933,13 +1045,13 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 
 				_that.hideOnline = data.ho == 1;
 				_that.hideInvisible = data.im == 1;
+                _that.alwaysOnline = data.a_on == 1;
 
 				if (_that.lhcVersion != data.v) {
                     _that.lhcVersion = data.v;
                     _that.lhcPendingRefresh = true;
 					_that.versionChanged();
 				}
-
 
 				if ($scope.setTimeoutEnabled == true) {
 					$scope.timeoutControl = setTimeout(function(){
@@ -950,7 +1062,10 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 				_that.isListLoaded = true;
 				
 		},function(error){
-				console.log(error);
+
+                _that.lhcConnectivityProblem = true;
+                _that.lhcConnectivityProblemExplain = error;
+
 				$scope.timeoutControl = setTimeout(function(){
 					$scope.loadChatList();
 				},confLH.back_office_sinterval);
@@ -1011,7 +1126,13 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 	this.deleteChat = function(chat_id, tabs, hidetab) {
 		return lhinst.deleteChat(chat_id, tabs, hidetab);
 	};
-	
+
+	this.startGroupChat = function (chat_id, name) {
+        if ($('#tabs').length > 0) {
+            return lhinst.startGroupChat(chat_id,$('#tabs'),LiveHelperChatFactory.truncate(name,10));
+        }
+    }
+
 	this.startChat = function (chat_id,name) {	
 		if ($('#tabs').length > 0){
 			return lhinst.startChat(chat_id,$('#tabs'),LiveHelperChatFactory.truncate(name,10));	
@@ -1027,17 +1148,21 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 	this.startChatTransfer = function(chat_id,name,transfer_id) {
 		return lhinst.startChatTransfer(chat_id,$('#tabs'),name,transfer_id);
 	};
-	
-	this.startChatOperator = function(user_id) {
+
+	$scope.startChatOperatorPublic = function(user_id){
+        _that.startChatOperator(user_id);
+    }
+
+    this.startChatOperator = function(user_id) {
 		LiveHelperChatFactory.getActiveOperatorChat(user_id).then(function(data) {
-			if (data.has_chat === true) {
-				lhinst.startChat(data.chat_id,$('#tabs'),LiveHelperChatFactory.truncate(data.nick,10));
-			} else {
-				lhc.revealModal({'url':WWW_DIR_JAVASCRIPT+'chat/startchatwithoperator/'+user_id});
-			}
-		});	
+		    lhinst.startGroupChat(data.id,$('#tabs'),LiveHelperChatFactory.truncate(data.name,10));
+		});
 	};
-	
+
+	this.openModal = function(url) {
+        lhc.revealModal({'url':WWW_DIR_JAVASCRIPT+url,hidecallback: function() { $scope.loadChatList(); }});
+    }
+
 	this.addEvent = (function () {
 	      var _that = this;
 		  if (document.addEventListener) {
@@ -1128,10 +1253,10 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
         }
     };
 
-	this.getOpenedChatIds = function () {
+	this.getOpenedChatIds = function (listId) {
         if (localStorage) {
         	try {
-				var achat_id = localStorage.getItem('achat_id');
+				var achat_id = localStorage.getItem(listId);
 
 				if (achat_id !== null && achat_id !== '') {
 					return achat_id_array = achat_id.split(',');
@@ -1141,6 +1266,10 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 			}
         }
         return [];
+    };
+
+    $scope.loadchatMessagesScope = function(){
+        lhinst.syncadmincall();
     };
 
 	this.verifyFilters = function () {
@@ -1196,14 +1325,34 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
         });
     };
 
+	this.rejectGroupChat = function (groupChatId) {
+        LiveHelperChatFactory.rejectGroupChat(groupChatId).then(function(data) {
+            $scope.loadChatList();
+        })
+    }
+
+    this.startNewGroupChat = function (groupName, publicChat) {
+        LiveHelperChatFactory.newGroupChat(groupName,publicChat).then(function(data) {
+            lhinst.startGroupChat(data.id,$('#tabs'),LiveHelperChatFactory.truncate(data.name,10));
+            $scope.loadChatList();
+            _that.new_group_name = "";
+            _that.new_group_type = "";
+        })
+    }
+
 	// Bootstraps initial attributes
 	this.initLHCData = function() {
 
 		var appendURL = '';
-		var openedChats = this.getOpenedChatIds();
+		var openedChats = this.getOpenedChatIds('achat_id');
+		var openedgChats = this.getOpenedChatIds('gachat_id');
 
 		if ($('#tabs').length > 0 && lhinst.disableremember == false && openedChats.length > 0) {
             appendURL = '/(chatopen)/' + openedChats.join('/');
+		}
+
+		if ($('#tabs').length > 0 && lhinst.disableremember == false && openedgChats.length > 0) {
+            appendURL += '/(chatgopen)/' + openedgChats.join('/');
 		}
 
 		LiveHelperChatFactory.loadInitialData(appendURL).then(function(data) {
@@ -1216,7 +1365,10 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
             _that.hideInvisible = data.im;
             _that.hideOnline = data.ho;
             _that.lhcVersion = data.v;
+            _that.alwaysOnline = data.a_on;
             _that.additionalColumns = data.col;
+            _that.widgetsActive = data.widgets;
+            _that.bot_st = data.bot_st;
 
 			angular.forEach(_that.widgetsItems, function(listId) {
 				_that.setDepartmentNames(listId);
@@ -1229,11 +1381,19 @@ lhcAppControllers.controller('LiveHelperChatCtrl',['$scope','$http','$location',
 			}
 
             angular.forEach(data.copen, function(chatOpen) {
-                lhinst.startChat(chatOpen.id,$('#tabs'),LiveHelperChatFactory.truncate(chatOpen.nick,10), false);
+                lhinst.startChat(chatOpen.id,$('#tabs'),LiveHelperChatFactory.truncate(chatOpen.nick,10), false, 0, chatOpen.status);
+            });
+
+            angular.forEach(data.cgopen, function(chatOpen) {
+                lhinst.startGroupChat(chatOpen.id,$('#tabs'),LiveHelperChatFactory.truncate(chatOpen.nick,10));
             });
 
             angular.forEach(data.cdel, function(chatOpen) {
-                lhinst.forgetChat(chatOpen);
+                lhinst.forgetChat(chatOpen,'achat_id');
+            });
+
+            angular.forEach(data.cgdel, function(chatOpen) {
+                lhinst.forgetChat(chatOpen,'gachat_id');
             });
 
             ee.emitEvent('eventLoadInitialData', [data, $scope, _that]);

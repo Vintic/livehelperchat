@@ -1,35 +1,34 @@
 <?php $currentUser = erLhcoreClassUser::instance(); ?>
-<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom p-0 pl-1">
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom p-0 pl-1 top-menu-bar-lhc">
     <?php include_once(erLhcoreClassDesign::designtpl('pagelayouts/parts/page_head_logo_back_office.tpl.php'));?>
 
-    <button class="btn btn-outline-light mr-auto" type="button" ng-click="lhc.toggleList('lmtoggle')" title="Expand or collapse left menu" aria-expanded="true" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+    <?php include_once(erLhcoreClassDesign::designtpl('pagelayouts/parts/page_head_side_control.tpl.php'));?>
 
-    <div ng-cloak class="version-updated float-left" ng-if="lhc.lhcPendingRefresh == true"><i class="material-icons">update</i><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('pagelayout/pagelayout','This window will be automatically refreshed in {{lhc.lhcVersionCounter}} seconds due to a version update.');?></div>
+    <div ng-cloak class="version-updated float-left" ng-if="lhc.lhcPendingRefresh == true || lhc.lhcConnectivityProblem == true">
+        <div ng-if="lhc.lhcPendingRefresh == true"><i class="material-icons">update</i><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('pagelayout/pagelayout','This window will be automatically refreshed in {{lhc.lhcVersionCounter}} seconds due to a version update.');?></div>
+        <div ng-if="lhc.lhcConnectivityProblem == true">You have weak internet connection or the server has problems. Try to refresh the  page. Error code {{lhc.lhcConnectivityProblemExplain}}</div>
+    </div>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNavDropdown">
         <ul class="navbar-nav ml-auto">
-            <?php include(erLhcoreClassDesign::designtpl('pagelayouts/parts/top_menu_chat_actions_pre.tpl.php'));?>
-            <?php if ($parts_top_menu_chat_actions_enabled == true && $currentUser->hasAccessTo('lhchat','allowchattabs')) : ?>
-                <li class="li-icon nav-item"><a class="nav-link" title="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('pagelayout/pagelayout','Chat tabs');?>" href="#" onclick="javascript:lhinst.chatTabsOpen()"><i class="material-icons">chat</i></a></li>
-            <?php endif;?>
+            <?php include_once(erLhcoreClassDesign::designtpl('pagelayouts/parts/top_menu_multiinclude.tpl.php'));?>
 
-            <?php if ($currentUser->hasAccessTo('lhsystem','use')) : ?>
-                <li class="li-icon nav-item"><a class="nav-link" title="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('pagelayout/pagelayout','Configuration');?>" href="<?php echo erLhcoreClassDesign::baseurl('system/configuration')?>"><i class="material-icons">settings_applications</i></a></li>
+            <?php if ($currentUser->hasAccessTo('lhchat','use') && $currentUser->hasAccessTo('lhuser','changeonlinestatus'))  : ?>
+                    <li class="list-inline-item nav-item"><a href="#" class="nav-link"><i id="online-offline-user" class="material-icons ng-cloak" ng-click="lhc.changeOnline()" title="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/user_settings','Change my status to online/offline');?>" >{{lhc.hideOnline == true ? 'flash_off' : 'flash_on'}}</i></a></li>
             <?php endif; ?>
-
-            <?php $hideULSetting = true;?>
-            <?php include(erLhcoreClassDesign::designtpl('lhchat/user_settings.tpl.php'));?>
-
+            
             <?php include_once(erLhcoreClassDesign::designtpl('pagelayouts/parts/user_box.tpl.php'));?>
+
+            <?php if (!isset($Result['hide_right_column']) || $Result['hide_right_column'] == false) : ?>
             <li class="li-icon nav-item">
                 <a class="nav-link" ng-click="lhc.toggleList('lmtoggler')" title="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('front/default', 'Expand or collapse right menu')?>">
                     <span class="navbar-toggler-icon"></span>
                 </a>
             </li>
+            <?php endif; ?>
+
         </ul>
     </div>
 

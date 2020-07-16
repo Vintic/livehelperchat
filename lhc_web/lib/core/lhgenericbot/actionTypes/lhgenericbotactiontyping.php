@@ -10,7 +10,10 @@ class erLhcoreClassGenericBotActionTyping {
 
         $metaMessage = array();
 
-        if (isset($action['content']['duration']) && !empty($action['content']['duration']) && $action['content']['duration'] > 0)
+        if (
+            (isset($action['content']['duration']) && !empty($action['content']['duration']) && $action['content']['duration'] > 0) ||
+            (isset($action['content']['untill_message']) && $action['content']['untill_message'] == true)
+        )
         {
 
             // Message should be send only on start chat event, but we are not in start chat mode
@@ -25,12 +28,17 @@ class erLhcoreClassGenericBotActionTyping {
                 $triggersProcessed[] = $trigger->id;
             }
 
-            $action['content']['text'] = erLhcoreClassGenericBotWorkflow::translateMessage($action['content']['text'],$chat->dep_id);
+            $action['content']['text'] = erLhcoreClassGenericBotWorkflow::translateMessage($action['content']['text'], array('chat' => $chat));
 
             $metaMessage['content']['typing'] = $action['content'];
 
             $msg->msg = "";
             $msg->meta_msg = !empty($metaMessage) ? json_encode($metaMessage) : '';
+            
+            if ($msg->meta_msg != '') {
+                $msg->meta_msg = erLhcoreClassGenericBotWorkflow::translateMessage($msg->meta_msg, array('chat' => $chat));
+            }
+
             $msg->chat_id = $chat->id;
             $msg->name_support = erLhcoreClassGenericBotWorkflow::getDefaultNick($chat);
             $msg->user_id = -2;

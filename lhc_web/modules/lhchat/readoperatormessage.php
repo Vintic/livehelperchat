@@ -362,7 +362,6 @@ if (isset($_POST['askQuestion']))
     // Javascript variables
     if ( $form->hasValidData( 'jsvar' ) && !empty($form->jsvar))
     {
-        $inputForm->jsvar = $form->jsvar;
         foreach (erLhAbstractModelChatVariable::getList(array('customfilter' => array('dep_id = 0 OR dep_id = ' . (int)$chat->dep_id))) as $jsVar) {
             if (isset($form->jsvar[$jsVar->id]) && !empty($form->jsvar[$jsVar->id])) {
                 if ($jsVar->var_identifier == 'lhc.nick') {
@@ -462,17 +461,17 @@ if (isset($_POST['askQuestion']))
     {
 
        $chat->time = $chat->pnd_time = time();
-       $chat->status = 0;
+       $chat->status = erLhcoreClassModelChat::STATUS_PENDING_CHAT;
        $chat->setIP();
        $chat->hash = erLhcoreClassChat::generateHash();
        $chat->referrer = isset($_POST['URLRefer']) ? $_POST['URLRefer'] : '';
        $chat->session_referrer = isset($_POST['r']) ? $_POST['r'] : '';
 
        if ($chat->nick == '') {
-       		$chat->nick = erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Visitor');
+       		$chat->nick = 'Visitor';
        }
        
-       erLhcoreClassModelChat::detectLocation($chat);
+       erLhcoreClassModelChat::detectLocation($chat, (string)$Params['user_parameters_unordered']['vid']);
      
        $chat->priority = is_numeric($Params['user_parameters_unordered']['priority']) ? (int)$Params['user_parameters_unordered']['priority'] : $chat->department->priority;
        $chat->chat_initiator = erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE;
@@ -508,6 +507,19 @@ if (isset($_POST['askQuestion']))
        $userInstance->message_seen_ts = time();
        $userInstance->chat_id = $chat->id;
        $userInstance->conversion_id = 0;
+
+        if ($chat->nick != 'Visitor') {
+            $onlineAttr = $userInstance->online_attr_system_array;
+            if (!isset($onlineAttr['username'])){
+                $onlineAttr['username'] = $chat->nick;
+                $userInstance->online_attr_system = json_encode($onlineAttr);
+            }
+        } elseif ($chat->nick == 'Visitor'){
+            if ($userInstance->nick && $userInstance->has_nick) {
+                $chat->nick = $userInstance->nick;
+            }
+        }
+
        $userInstance->saveThis();
 
        $chat->online_user_id = $userInstance->id;

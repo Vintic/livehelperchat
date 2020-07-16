@@ -1,17 +1,21 @@
 <?php
 
+erLhcoreClassRestAPIHandler::setHeaders();
+
 $fileData = (array)erLhcoreClassModelChatConfig::fetch('file_configuration')->data;
 
-if (isset($fileData['active_user_upload']) && $fileData['active_user_upload'] == true) {
+$chat = erLhcoreClassModelChat::fetch($Params['user_parameters']['chat_id']);
+
+$chatVariables = $chat->chat_variables_array;
+
+if (isset($fileData['active_user_upload']) && $fileData['active_user_upload'] == true || (isset($chatVariables['lhc_fu']) && $chatVariables['lhc_fu'] == 1)) {
 
     $db = ezcDbInstance::get();
 
     try {
         $db->beginTransaction();
 
-        $chat = erLhcoreClassModelChat::fetch($Params['user_parameters']['chat_id']);
-
-        if ($chat->hash == $Params['user_parameters']['hash'] && ($chat->status == erLhcoreClassModelChat::STATUS_PENDING_CHAT || $chat->status == erLhcoreClassModelChat::STATUS_ACTIVE_CHAT)) // Allow add messages only if chat is active
+        if ($chat->hash == $Params['user_parameters']['hash'] && ($chat->status == erLhcoreClassModelChat::STATUS_BOT_CHAT || $chat->status == erLhcoreClassModelChat::STATUS_PENDING_CHAT || $chat->status == erLhcoreClassModelChat::STATUS_ACTIVE_CHAT)) // Allow add messages only if chat is active
         {
             $errors = array();
             erLhcoreClassChatEventDispatcher::getInstance()->dispatch('file.before_user_uploadfile.file_store', array('errors' => & $errors));
@@ -40,6 +44,8 @@ if (isset($fileData['active_user_upload']) && $fileData['active_user_upload'] ==
                     $clamav = new Clamav($opts);
                 }
 
+
+
                 $upload_handler = new erLhcoreClassFileUpload(array(
                     'antivirus' => $clamav,
                     'user_id' => 0,
@@ -59,7 +65,7 @@ if (isset($fileData['active_user_upload']) && $fileData['active_user_upload'] ==
                 }
 
                 $chat->user_typing = time();
-                erLhcoreClassChat::getSession()->update($chat);
+                $chat->updateThis(array('update' => array('user_typing_txt','user_typing')));
 
                 echo json_encode(array('error' => 'false'));
             } else {

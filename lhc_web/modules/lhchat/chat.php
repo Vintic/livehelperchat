@@ -5,7 +5,8 @@ $tpl = erLhcoreClassTemplate::getInstance( 'lhchat/chat.tpl.php');
 if (isset($Params['user_parameters_unordered']['theme']) && (int)$Params['user_parameters_unordered']['theme'] > 0) {
 	try {
 		$theme = erLhAbstractModelWidgetTheme::fetch($Params['user_parameters_unordered']['theme']);
-		$Result['theme'] = $theme;	
+        $theme->translate();
+		$Result['theme'] = $theme;
 		$tpl->set('theme',$theme);
 	} catch (Exception $e) {
 
@@ -15,6 +16,7 @@ if (isset($Params['user_parameters_unordered']['theme']) && (int)$Params['user_p
 	if ($defaultTheme > 0) {
 		try {
 			$theme = erLhAbstractModelWidgetTheme::fetch($defaultTheme);
+            $theme->translate();
 			$Result['theme'] = $theme;		
 			$tpl->set('theme',$theme);
 		} catch (Exception $e) {
@@ -66,7 +68,14 @@ try {
                     $chat->unanswered_chat = 0;
                 }
 
-	        	erLhcoreClassChat::getSession()->update($chat);
+                $chat->updateThis(array('update' => array(
+                    'unanswered_chat',
+                    'user_typing_txt',
+                    'is_user_typing',
+                    'user_typing',
+                    'support_informed',
+                )));
+
 
         	$db->commit();
         }

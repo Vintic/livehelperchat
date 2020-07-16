@@ -124,14 +124,9 @@ a:hover{
 	cursor:pointer;
 }
 
-.mx170{
-	max-height:170px;
-	overflow:auto;
-}
-
-.mx550{
-	max-height:550px;
-	overflow:auto;
+.break-words{
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .mh150{
@@ -146,6 +141,13 @@ a:hover{
     user-select: none;
 }
 
+.user-chatwidget-buttons-start{
+    position:absolute;
+    top: 3px;
+    right: 3px;
+    height: 10px;
+}
+
 .live-chat-message,.live-chat-message:focus{
 	outline: none;
 	-webkit-box-shadow: none !important;
@@ -153,7 +155,6 @@ a:hover{
 	box-shadow: none !important;
 	border-radius: 15px;
 	border: 1px solid #ccc;
-    padding-right: 30px;
     max-height: 60px;
     overflow-y:hidden;
 }
@@ -165,6 +166,7 @@ a:hover{
 .chat-setting-item{
 	font-size:32px;
 }
+
 .action-image {
     cursor:pointer;
 }
@@ -187,6 +189,10 @@ a:hover{
 
 .fs12 {
 	font-size: 12px;
+}
+
+.fs13 {
+	font-size: 13px;
 }
 
 .fs24 {
@@ -220,10 +226,8 @@ a:hover{
 }
 
 .msgBlock,.msgBlock-inv{
-	height:120px;
 	overflow-y:auto;
 	resize: vertical;
-	background-color:#FFF;
 	padding-bottom:3px;
 	padding-right:5px;
 	padding-left:5px;
@@ -298,6 +302,58 @@ div.system-response {
 	color:#888;
 }
 
+.bubble-messages .user-nick-title,
+.bubble-messages .op-nick-title
+{
+    display: none;
+}
+
+.bubble-messages .op-tit {
+    float:left;
+    margin-top: 0px;
+    padding: 0;
+}
+
+.bubble-messages .vis-tit {
+    float:right;
+    margin-left: 3px!important;
+    margin-top: 3px;
+}
+
+.bubble-messages .op-tit {
+    position: absolute;
+}
+
+.bubble-messages .op-tit i.material-icons,
+.bubble-messages .vis-tit i.material-icons{
+    font-size: 24px;
+}
+
+#messages.hide-visitor-profile .vis-tit{
+    display: none!important;
+}
+
+.profile-msg-pic {
+    width: 24px;
+}
+
+.bubble-messages div.message-admin div.msg-body,
+.bubble-messages div.message-admin div.meta-message{
+    margin-left:29px;
+}
+
+@media (min-device-width: 1024px) {
+    .profile-msg-pic {
+        width: 33px;
+    }
+
+    .bubble-messages div.message-admin div.msg-body,
+    .bubble-messages div.message-admin div.meta-message{
+        margin-left:42px;
+    }
+}
+
+
 div.message-row {
 	padding:0px 0px 0px 0px;
 	line-height:140%;
@@ -325,6 +381,10 @@ div.message-row > div,div.message-row > span,div.message-row > i {
 .message-row-typing {
 	margin:4px 0px;
 	animation: blink 1500ms linear infinite;
+}
+
+.blink-ani{
+    animation: blink 1500ms linear infinite;
 }
 
 @keyframes blink{
@@ -355,7 +415,6 @@ div.message-admin{
 	text-align:right;
 }
 
-
 div.message-admin div.msg-body{
 	margin-right:0px;
 	background-color: #3267e4;
@@ -368,14 +427,17 @@ div.message-admin div.msg-body{
 	margin-bottom:3px;
 	display:inline-block;
 	text-align: left;
-	max-width:90%;
+	max-width:85%;
+}
+
+div.other-operator div.msg-body{
+    background-color: #5585ff;
 }
 
 div.message-admin div.msg-body a.link{
 	color:#fff;
 	text-decoration:underline;
 }
-
 
 div.message-row-typing div.msg-body {
 	background-color: #d0d0d0;
@@ -463,6 +525,7 @@ div.message-row.response div.msg-body{
 	position: absolute;
 	right: 20px;
 	top: 20px;
+    z-index: 99;
 }
 .hidden-download::after{
 	font-family: 'Material Icons';
@@ -474,6 +537,16 @@ div.message-row.response div.msg-body{
 	padding: 5px;
 	border-radius: 5px;
 }
+
+.audio-download{
+    top:0;
+    right:0;
+}
+
+.audio-download::after{
+    font-size: 16px;
+}
+
 .msg-body-media:hover > img
 {
 	filter: contrast(50%);
@@ -602,6 +675,10 @@ div.message-admin+div.message-admin .msg-date,div.message-row.response+div.messa
 	margin:0;
 }
 
+.btn-block-department .dropdown-menu{
+    min-width: 15rem;
+}
+
 .btn-block-department label:hover{
 	background-color:#ececec;
 }
@@ -661,13 +738,6 @@ div.message-row.response+div.message-row.response:hover .msg-date,
 
 .admin-chat-mic {
 	background:url(../images/icons/mic.gif) no-repeat center center;
-}
-
-.user-chatwidget-buttons{
-	position:absolute;
-	top: 3px;
-	right: 3px;
-	height: 10px;
 }
 
 .dropdown-toggle-widget,
@@ -1158,18 +1228,33 @@ input[type="file"]{
 	bottom:54px;
 	border:1px solid #ddd;
 	font-size:12px;
+    z-index:999;
+    width: 100%;
 }
 
 .current-hash-content{
-	float:left;
+    max-height: 370px;
+    overflow: auto;
+    scroll-behavior: smooth;
 }
 
 .canned-msg-preview{
-	float:left;
+	clear: both;
 	padding: 2px 5px 1px;
 	background-color: #fff;
 	border-bottom: 1px solid #ddd;
-	border-left: 1px solid #ddd;
+    min-height: 66px;
+    max-height: 200px;
+    overflow: auto;
+}
+
+.canned-msg-preview img{
+    max-height: 80px;
+}
+
+.hover-canned:hover{
+    font-weight: bold;
+    font-style: italic;
 }
 
 .current-hash-content ul{
@@ -1186,7 +1271,6 @@ input[type="file"]{
 }
 
 .current-hash-content ul li span{
-	display: table-cell;
 	padding:2px 5px;
 	cursor:pointer;
 }
@@ -1200,7 +1284,6 @@ input[type="file"]{
 
 .canned-list li.current-item a,
 .current-hash-content li.current-item,
-.current-hash-content ul li:hover,
 .canned-list a:hover{background-color:#cecece;}
 .canned-list > li{position:relative;}
 .canned-list > li > ul {display: none;}
@@ -1293,6 +1376,10 @@ input[type="file"]{
 * List style
 */
 
+.msgBlock-group-admin div.other-operator{
+    text-align: left;
+}
+
 .list-group .button-item {
 	padding:0;
 }
@@ -1303,6 +1390,10 @@ input[type="file"]{
 	text-align: center;
 	font-size: 14px;
 	font-weight: 600;
+}
+
+.mw-100{
+    max-width: 100%!important;
 }
 
 .list-group {
@@ -1457,6 +1548,30 @@ input[type="file"]{
 	height: auto;
 }
 
+.fs25{
+    font-size: 25px;
+}
+
+.spinner-pulsating {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity:0;
+    }
+
+    50% {
+        opacity:1;
+    }
+
+    100% {
+        opacity:0;
+    }
+}
+
+
+
 @keyframes lhc-spin {
 	0% {
 		-webkit-transform: rotate(0deg);
@@ -1466,4 +1581,51 @@ input[type="file"]{
 		-webkit-transform: rotate(359deg);
 		transform: rotate(359deg);
 	}
+}
+
+.color-item:hover{
+    -moz-box-shadow: 0 0 4px #454545;
+    -webkit-box-shadow: 0 0 4px #454545;
+    box-shadow: 0 0 4px #454545;
+}
+
+.color-item{
+    width: 20px;height: 20px;
+    cursor: pointer;
+}
+
+.survey-star-item svg{
+    opacity: 0.5;
+    color:#0575a2;
+    cursor: pointer;
+}
+
+.survey-stars-row .survey-selected-item svg, .survey-stars-row .hover svg {
+    transform: scale(1.3);
+    opacity: 1;
+}
+
+.mx170{
+    max-height:170px;
+    overflow:auto;
+}
+
+.mx550{
+    max-height:550px;
+    overflow:auto;
+}
+
+.mx300{
+    max-height:300px;
+    overflow:auto;
+}
+
+.mx275{
+    max-height:275px;
+    overflow:auto;
+}
+
+.mh275{
+    min-height:275px;
+    overflow:auto;
 }

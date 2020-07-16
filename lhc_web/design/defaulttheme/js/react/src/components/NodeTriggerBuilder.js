@@ -19,6 +19,9 @@ import NodeTriggerActionConditions from './builder/NodeTriggerActionConditions';
 import NodeTriggerActionMatchActions from './builder/NodeTriggerActionMatchActions';
 import NodeTriggerActionEventType from './builder/NodeTriggerActionEventType';
 import NodeTriggerActionRepeatRestrict from './builder/NodeTriggerActionRepeatRestrict';
+import NodeTriggerActionExecuteJS from './builder/NodeTriggerActionExecuteJS';
+import NodeTriggerActionRestAPI from './builder/NodeTriggerActionRestAPI';
+import NodeTriggerActionTbody from './builder/NodeTriggerActionTbody';
 
 @connect((store) => {
     return {
@@ -154,7 +157,7 @@ class NodeTriggerBuilder extends Component {
             actions = this.props.currenttrigger.get('currenttrigger').get('actions').map((action, index) => {
                 let key = index+'-'+this.props.currenttrigger.get('currenttrigger').get('id')+'-'+action.get('_id');
                 if (action.get('type') == 'text') {
-                    return <NodeTriggerActionText upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} addSubelement={this.addSubelement} deleteSubelement={this.deleteSubelement} key={key} id={index} removeAction={this.removeAction} removeQuickReply={this.removeQuickReply} addQuickReply={this.addQuickReply} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} />
+                    return <NodeTriggerActionText upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} moveDownSubelement={this.moveDownSubelement} moveUpSubelement={this.moveUpSubelement} addSubelement={this.addSubelement} deleteSubelement={this.deleteSubelement} key={key} id={index} removeAction={this.removeAction} removeQuickReply={this.removeQuickReply} addQuickReply={this.addQuickReply} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} />
                 } else if (action.get('type') == 'list') {
                     return <NodeTriggerActionList upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} moveDownSubelement={this.moveDownSubelement} moveUpSubelement={this.moveUpSubelement} addSubelement={this.addSubelement} removeQuickReply={this.removeQuickReply} addQuickReply={this.addQuickReply} deleteSubelement={this.deleteSubelement} key={key} id={index} removeAction={this.removeAction} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} />
                 } else if (action.get('type') == 'generic') {
@@ -189,6 +192,12 @@ class NodeTriggerBuilder extends Component {
                     return <NodeTriggerActionEventType upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} key={key} id={index} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} removeAction={this.removeAction} deleteSubelement={this.deleteSubelement} addSubelement={this.addSubelement} />
                 } else if (action.get('type') == 'repeat_restrict') {
                     return <NodeTriggerActionRepeatRestrict upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} key={key} id={index} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} removeAction={this.removeAction} deleteSubelement={this.deleteSubelement} addSubelement={this.addSubelement} />
+                } else if (action.get('type') == 'execute_js') {
+                    return <NodeTriggerActionExecuteJS upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} key={key} id={index} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} removeAction={this.removeAction} deleteSubelement={this.deleteSubelement} addSubelement={this.addSubelement} />
+               } else if (action.get('type') == 'tbody') {
+                    return <NodeTriggerActionTbody upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} key={key} id={index} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} removeAction={this.removeAction} deleteSubelement={this.deleteSubelement} addSubelement={this.addSubelement} />
+                } else if (action.get('type') == 'restapi') {
+                    return <NodeTriggerActionRestAPI upField={this.upField} downField={this.downField} isFirst={index == 0} isLast={index + 1 == totalTriggers} key={key} id={index} onChangeContent={this.handleContentChange} onChangeType={this.handleTypeChange} action={action} removeAction={this.removeAction} deleteSubelement={this.deleteSubelement} addSubelement={this.addSubelement} />
                 }
             });
         }

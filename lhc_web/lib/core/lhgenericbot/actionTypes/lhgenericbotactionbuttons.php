@@ -19,12 +19,17 @@ class erLhcoreClassGenericBotActionButtons {
         $msgText = isset($action['content']['buttons_options']['message']) && !empty($action['content']['buttons_options']['message']) ? $action['content']['buttons_options']['message'] : '';
 
         if ($msgText != '') {
-            $msgText = erLhcoreClassGenericBotWorkflow::translateMessage($msgText,$chat->dep_id);
+            $msgText = erLhcoreClassGenericBotWorkflow::translateMessage($msgText, array('chat' => $chat));
         }
 
         $msg->msg = $msgText;
 
         $msg->meta_msg = !empty($metaMessage) ? json_encode($metaMessage) : '';
+
+        if ($msg->meta_msg != '') {
+            $msg->meta_msg = erLhcoreClassGenericBotWorkflow::translateMessage($msg->meta_msg, array('chat' => $chat));
+        }
+
         $msg->chat_id = $chat->id;
         $msg->name_support = erLhcoreClassGenericBotWorkflow::getDefaultNick($chat);
         $msg->user_id = -2;

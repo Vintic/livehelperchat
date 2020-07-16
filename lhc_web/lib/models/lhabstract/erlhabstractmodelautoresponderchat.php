@@ -32,6 +32,53 @@ class erLhAbstractModelAutoResponderChat
         return (string)$this->chat_id;
     }
 
+    /*
+     * Chat closing auto responder
+     * */
+    public function processClose()
+    {
+        if ($this->auto_responder !== false) {
+
+            if ($this->auto_responder->close_message != '') {
+
+                $msg = new erLhcoreClassModelmsg();
+                $msg->msg = trim($this->auto_responder->close_message);
+                $msg->chat_id = $this->chat->id;
+                $msg->name_support = $this->chat->user !== false ? $this->chat->user->name_support : ($this->auto_responder->operator != '' ? $this->auto_responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat', 'Live Support'));
+                $msg->user_id = $this->chat->user_id > 0 ? $this->chat->user_id : - 2;
+                $msg->time = time();
+                erLhcoreClassChat::getSession()->save($msg);
+
+                $this->chat->last_msg_id = $msg->id;
+                $this->chat->updateThis(array('update' => array('last_msg_id')));
+            }
+        }
+    }
+
+    public function processAccept() {
+
+        if ($this->auto_responder !== false && $this->auto_responder->multilanguage_message != '' && $this->chat->user_id > 0) {
+            $localeShort = explode('-',$this->chat->chat_locale)[0];
+            $chatLanguages = [$this->chat->chat_locale,$localeShort];
+
+            $languagesIgnore = $this->auto_responder->languages_ignore;
+
+            if ((empty($languagesIgnore) || empty(array_intersect($chatLanguages,$languagesIgnore))) && erLhcoreClassModelSpeechUserLanguage::getCount(array('filterlor' => array('language' => $chatLanguages),'filter' => array('user_id' => $this->chat->user_id))) > 0) {
+
+                $msg = new erLhcoreClassModelmsg();
+                $msg->msg = trim($this->auto_responder->multilanguage_message);
+                $msg->chat_id = $this->chat->id;
+                $msg->name_support = $this->chat->user !== false ? $this->chat->user->name_support : ($this->auto_responder->operator != '' ? $this->auto_responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat', 'Live Support'));
+                $msg->user_id = $this->chat->user_id > 0 ? $this->chat->user_id : - 2;
+                $msg->time = time();
+                erLhcoreClassChat::getSession()->save($msg);
+
+                $this->chat->last_msg_id = $msg->id;
+                $this->chat->updateThis(array('update' => array('last_msg_id')));
+            }
+        }
+    }
+
     public function process()
     {
         if ($this->auto_responder !== false) {
@@ -40,7 +87,7 @@ class erLhAbstractModelAutoResponderChat
 
                 if ($this->auto_responder->ignore_pa_chat == 0 || ($this->auto_responder->ignore_pa_chat == 1 && $this->chat->user_id == 0)) { // Do not send messages to assigned pending chats
 
-                    if ($this->wait_timeout_send <= 0 && $this->auto_responder->wait_timeout > 0 && ! empty($this->auto_responder->timeout_message) && (time() - ($this->chat->last_op_msg_time > 0 ? $this->chat->last_op_msg_time : ($this->chat->pnd_time > 0 ? $this->chat->pnd_time : $this->chat->time))) > ($this->auto_responder->wait_timeout * ($this->auto_responder->repeat_number - (abs($this->wait_timeout_send))))) {
+                    if ($this->wait_timeout_send <= 0 && $this->auto_responder->wait_timeout > 0 && (time() - ($this->chat->last_op_msg_time > 0 ? $this->chat->last_op_msg_time : ($this->chat->pnd_time > 0 ? $this->chat->pnd_time : $this->chat->time))) > ($this->auto_responder->wait_timeout * ($this->auto_responder->repeat_number - (abs($this->wait_timeout_send))))) {
 
                         $errors = array();
                         erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_auto_responder_triggered', array(
@@ -75,22 +122,27 @@ class erLhAbstractModelAutoResponderChat
                         }
                     } elseif ($this->pending_send_status >= 1 && $this->pending_send_status < 5) {
                         for ($i = 5; $i >= 2; $i --) {
-                            if ($this->pending_send_status < $i && $this->auto_responder->{'wait_timeout_' . $i} > 0 && $this->auto_responder->{'wait_timeout_' . $i} < (time() - ($this->chat->last_op_msg_time > 0 ? $this->chat->last_op_msg_time : ($this->chat->pnd_time > 0 ? $this->chat->pnd_time : $this->chat->time))) && ! empty($this->auto_responder->{'timeout_message_' . $i})) {
+                            if ($this->pending_send_status < $i && $this->auto_responder->{'wait_timeout_' . $i} > 0 && $this->auto_responder->{'wait_timeout_' . $i} < (time() - ($this->chat->last_op_msg_time > 0 ? $this->chat->last_op_msg_time : ($this->chat->pnd_time > 0 ? $this->chat->pnd_time : $this->chat->time)))) {
 
                                 $this->pending_send_status = $i;
                                 $this->saveThis();
 
+                                $metaMessage = $this->auto_responder->getMeta($this->chat, 'pending_op', $i, array('include_message' => true));
+
                                 $msg = new erLhcoreClassModelmsg();
-                                $msg->msg = trim($this->auto_responder->{'timeout_message_' . $i});
-                                $msg->meta_msg = $this->auto_responder->getMeta($this->chat, 'pending');
+                                $msg->msg = trim($this->auto_responder->{'timeout_message_' . $i}) . $metaMessage['msg'];
+                                $msg->meta_msg = $metaMessage['meta_msg'];
                                 $msg->chat_id = $this->chat->id;
                                 $msg->name_support = $this->auto_responder->operator != '' ? $this->auto_responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat', 'Live Support');
                                 $msg->user_id = - 2;
                                 $msg->time = time();
+
+                                erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_auto_responder_msg_saved', array('msg' => & $msg, 'chat' => & $this->chat));
+
                                 erLhcoreClassChat::getSession()->save($msg);
 
                                 $this->chat->last_msg_id = $msg->id;
-                                $this->chat->updateThis();
+                                $this->chat->updateThis(array('update' => array('last_msg_id')));
                             }
                         }
                     }
@@ -132,10 +184,13 @@ class erLhAbstractModelAutoResponderChat
                         $msg->chat_id = $this->chat->id;
                         $msg->user_id = - 1;
                         $msg->time = time();
+
+                        erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_auto_responder_msg_saved', array('msg' => & $msg, 'chat' => & $this->chat));
+
                         erLhcoreClassChat::getSession()->save($msg);
 
                         $this->chat->last_msg_id = $msg->id;
-                        $this->chat->updateThis();
+                        $this->chat->updateThis(array('update' => array('last_msg_id','status_sub','last_user_msg_time','last_op_msg_time','lsync','last_user_msg_time')));
                     }
                 }
 
@@ -149,16 +204,19 @@ class erLhAbstractModelAutoResponderChat
                             $msg->chat_id = $this->chat->id;
                             $msg->user_id = - 1;
                             $msg->time = time();
+
+                            erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_auto_responder_msg_saved', array('msg' => & $msg, 'chat' => & $this->chat));
+
                             erLhcoreClassChat::getSession()->save($msg);
 
                             $this->chat->last_msg_id = $msg->id;
                             $this->chat->status_sub = erLhcoreClassModelChat::STATUS_SUB_SURVEY_SHOW;
-                            $this->chat->updateThis();
+                            $this->chat->updateThis(array('update' => array('last_msg_id','status_sub')));
 
                             if ($this->chat->user_id > 0) {
                                 erLhcoreClassChat::updateActiveChats($this->chat->user_id);
                             }
-                            
+
                             erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.redirected_to_survey_by_autoresponder',array('chat' => & $this->chat));
 
                             // Survey redirected, end workflow
@@ -178,10 +236,43 @@ class erLhAbstractModelAutoResponderChat
                                 $msg->name_support = $this->chat->user !== false ? $this->chat->user->name_support : ($this->auto_responder->operator != '' ? $this->auto_responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat', 'Live Support'));
                                 $msg->user_id = $this->chat->user_id > 0 ? $this->chat->user_id : - 2;
                                 $msg->time = time();
+
+                                erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_auto_responder_msg_saved', array('msg' => & $msg, 'chat' => & $this->chat));
+
                                 erLhcoreClassChat::getSession()->save($msg);
 
                                 $this->chat->last_msg_id = $msg->id;
-                                $this->chat->updateThis();
+                                $this->chat->updateThis(array('update' => array('last_msg_id')));
+                            }
+                        }
+
+                    } elseif ($this->chat->last_op_msg_time < $this->chat->last_user_msg_time && $this->chat->last_user_msg_time > 0 && $this->chat->last_op_msg_time > $this->chat->pnd_time ) {
+
+                        $lastMessageTime = self::getLastVisitorMessageTime($this->chat);
+
+                        for ($i = 5; $i >= 1; $i--) {
+                            $this->auto_responder->{'timeout_op_reply_message_' . $i};
+                            $this->auto_responder->{'wait_op_timeout_reply_' . $i};
+
+                            if ($this->active_send_status < $i && !empty($this->auto_responder->{'timeout_op_reply_message_' . $i}) && $this->auto_responder->{'wait_op_timeout_reply_' . $i} > 0 && (time() - $lastMessageTime > $this->auto_responder->{'wait_op_timeout_reply_' . $i}) ) {
+
+                                $this->active_send_status = $i;
+                                $this->saveThis();
+
+                                $msg = new erLhcoreClassModelmsg();
+                                $msg->msg = trim($this->auto_responder->{'timeout_op_reply_message_' . $i});
+                                $msg->chat_id = $this->chat->id;
+                                $msg->name_support = $this->chat->user !== false ? $this->chat->user->name_support : ($this->auto_responder->operator != '' ? $this->auto_responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat', 'Live Support'));
+                                $msg->user_id = $this->chat->user_id > 0 ? $this->chat->user_id : - 2;
+                                $msg->meta_msg = (string)$this->auto_responder->getMeta($this->chat, 'nreply_op', $i);
+                                $msg->time = time();
+
+                                erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_auto_responder_msg_saved', array('msg' => & $msg, 'chat' => & $this->chat));
+
+                                erLhcoreClassChat::getSession()->save($msg);
+
+                                $this->chat->last_msg_id = $msg->id;
+                                $this->chat->updateThis(array('update' => array('last_msg_id')));
                             }
                         }
 
@@ -204,10 +295,13 @@ class erLhAbstractModelAutoResponderChat
                             $msg->name_support = $this->chat->user !== false ? $this->chat->user->name_support : ($this->auto_responder->operator != '' ? $this->auto_responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat', 'Live Support'));
                             $msg->user_id = $this->chat->user_id > 0 ? $this->chat->user_id : - 2;
                             $msg->time = time();
+
+                            erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_auto_responder_msg_saved', array('msg' => & $msg, 'chat' => & $this->chat));
+
                             erLhcoreClassChat::getSession()->save($msg);
 
                             $this->chat->last_msg_id = $msg->id;
-                            $this->chat->updateThis();
+                            $this->chat->updateThis(array('update' => array('last_msg_id')));
                         }
                     }
                 }
@@ -215,12 +309,40 @@ class erLhAbstractModelAutoResponderChat
         }
     }
 
+    public static function getLastVisitorMessageTime($chat) {
+        $messages = erLhcoreClassModelmsg::getList(array('limit' => 10, 'sort' => 'id DESC', 'filter' => array('chat_id' => $chat->id)));
+
+        $prevMessage = null;
+        foreach ($messages as $msg) {
+            if ($prevMessage === null) {
+                if ($msg->user_id == 0){
+                    $prevMessage = $msg;
+                }
+                continue;
+            }
+
+            if ($msg->user_id > 0 && $msg->time <= $chat->last_op_msg_time) {
+                return $prevMessage->time;
+            }
+
+            if ($msg->user_id == 0) {
+                $prevMessage = $msg;
+            }
+        }
+
+        if ($prevMessage instanceof erLhcoreClassModelmsg){
+            return $prevMessage->time;
+        }
+
+        return $chat->last_user_msg_time;
+    }
+
     public function __get($var)
     {
         switch ($var) {
             case 'auto_responder':
                 $this->auto_responder = erLhAbstractModelAutoResponder::fetch($this->auto_responder_id);
-                $this->auto_responder->translateByChat($this->chat->chat_locale);
+                $this->auto_responder->translateByChat($this->chat->chat_locale, array('user_id' => $this->chat->user_id, 'dep_id' => $this->chat->dep_id));
                 return $this->auto_responder;
                 break;
 

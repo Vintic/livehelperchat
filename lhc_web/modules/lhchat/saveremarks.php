@@ -8,7 +8,7 @@ if (!isset($_SERVER['HTTP_X_CSRFTOKEN']) || !$currentUser->validateCSFRToken($_S
 
 $definition = array(
 		'data' => new ezcInputFormDefinitionElement(
-				ezcInputFormDefinitionElement::REQUIRED, 'unsafe_raw'
+				ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
 		)
 );
 
@@ -19,13 +19,13 @@ $errorTpl = erLhcoreClassTemplate::getInstance( 'lhkernel/validation_error.tpl.p
 
 if ( erLhcoreClassChat::hasAccessToRead($Chat) )
 {
-	if ($form->hasValidData('data')) {
+	if ($form->hasInputField('data') && $form->hasValidData('data')) {
 	    $errors = array();
         erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_save_remarks',array('chat' => & $Chat, 'errors' => & $errors));
 
         if(empty($errors)) {
             $Chat->remarks = $form->data;
-            $Chat->saveThis();
+            $Chat->saveThis(array('update' => array('remarks')));
             echo json_encode(array('error' => 'false'));
             exit;
         } else {

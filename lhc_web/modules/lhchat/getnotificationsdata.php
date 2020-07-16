@@ -34,6 +34,8 @@ foreach ($items as $item) {
         $notification_message_type = erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Unread message');
     } elseif ($itemsTypes[$item->id] == 'pending_chat') {
         $notification_message_type = erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Pending Chat');
+    } elseif ($itemsTypes[$item->id] == 'bot_chats') {
+        $notification_message_type = erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Bot Chat');
     } elseif ($itemsTypes[$item->id] == 'transfer_chat' || ($itemsTypes[$item->id] == 'transfer_chat_dep')) {
         
         if ($item->status == erLhcoreClassModelChat::STATUS_OPERATORS_CHAT) {
@@ -50,13 +52,18 @@ foreach ($items as $item) {
     
     $type = $itemsTypes[$item->id];
     
-    if ($type == 'active_chat') {
+    if ($type == 'active_chat' || $type == 'bot_chats') {
         $type = 'pending_chat';
     } elseif ($type == 'transfer_chat_dep') {
         $type = 'transfer_chat';
     }
 
     $titleParts = array_filter(array($notification_message_type, $nick, $department));
+
+    // do not show notification if i'm not chat owner and it's already belongs to other user
+    if ($item->user_id > 0 && $type != 'transfer_chat' && $item->user_id != $currentUser->getUserID()) {
+        continue;
+    }
 
     $returnArray[] = array(
         'nick' => implode(' | ', $titleParts),

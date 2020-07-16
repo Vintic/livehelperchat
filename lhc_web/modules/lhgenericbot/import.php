@@ -58,9 +58,28 @@ if (ezcInputForm::hasPostData()) {
                         $eventObj->pattern_exc = $event['pattern_exc'];
                         $eventObj->configuration = $event['configuration'];
                         $eventObj->type = $event['type'];
-                        $eventObj->on_start_type = $event['on_start_type'];
-                        $eventObj->priority = $event['priority'];
+
+                        if (isset($event['on_start_type'])) {
+                            $eventObj->on_start_type = $event['on_start_type'];
+                        }
+
+                        if (isset($event['priority'])) {
+                            $eventObj->priority = $event['priority'];
+                        }
+
                         $eventObj->saveThis();
+                    }
+
+                    // Import payloads
+                    if (isset($trigger['payloads'])) {
+                        foreach ($trigger['payloads'] as $payloadVar) {
+                            $payloadObj = new erLhcoreClassModelGenericBotPayload();
+                            $payloadObj->name = $payloadVar['name'];
+                            $payloadObj->payload = $payloadVar['payload'];
+                            $payloadObj->bot_id = $bot->id;
+                            $payloadObj->trigger_id = $triggerObj->id;
+                            $payloadObj->saveThis();
+                        }
                     }
                 }
             }

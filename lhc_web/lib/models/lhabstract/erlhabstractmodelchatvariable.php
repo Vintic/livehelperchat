@@ -21,6 +21,7 @@ class erLhAbstractModelChatVariable
             'var_name' => $this->var_name,
             'var_identifier' => $this->var_identifier,
             'type' => $this->type,
+            'persistent' => $this->persistent,
         );
 
         return $stateArray;
@@ -55,6 +56,12 @@ class erLhAbstractModelChatVariable
         $item = new stdClass();
         $item->id = 2;
         $item->name = erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation','Decimal');
+
+        $items[] = $item;
+
+        $item = new stdClass();
+        $item->id = 3;
+        $item->name = erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation','Encrypted');
 
         $items[] = $item;
 
@@ -116,6 +123,8 @@ class erLhAbstractModelChatVariable
     public $var_identifier = '';
 
     public $type = 0;
+
+    public $persistent = 0;
 
     public $hide_delete = false;
 }

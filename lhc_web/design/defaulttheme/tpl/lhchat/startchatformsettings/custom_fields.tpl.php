@@ -19,6 +19,7 @@
 			<div class="form-group">
 				<label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Type')?></label> <select ng-model="startChat.fieldtype" class="form-control">
 					<option value="text"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Text')?></option>
+					<option value="password"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Password')?></option>
 					<option value="hidden"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Hidden')?></option>
 					<option value="dropdown"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Dropdown')?></option>
 				</select>
@@ -56,7 +57,8 @@
 			</div>
 		</div>
 		<div class="col-3">
-			<label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Is required')?> <input ng-model="startChat.isrequired" type="checkbox" name="isRequired" /></label>
+			<label><input ng-model="startChat.isrequired" type="checkbox" name="isRequired" /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Is required')?> </label><br/>
+            <label><input ng-model="startChat.hide_prefilled" type="checkbox" name="hidePrefilled" /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Hide if prefilled')?></label>
 		</div>
         <div class="col-3">
             <div class="form-group">
@@ -93,6 +95,7 @@
                         <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Type')?></label>
                         <select ng-model="field.fieldtype" class="form-control" name="customFieldType[]">
                             <option value="text"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Text')?></option>
+                            <option value="password"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Password')?></option>
                             <option value="hidden"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Hidden')?></option>
                             <option value="dropdown"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Dropdown')?></option>
                         </select>
@@ -127,7 +130,8 @@
                     </div>
                 </div>
                 <div class="col-6">
-                    <label><input ng-model="field.isrequired" type="checkbox" name="customFieldIsrequired[]" value="true" /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Is required')?></label>
+                    <label><input ng-model="field.isrequired" type="checkbox" name="customFieldIsrequired[]" value="true" /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Is required')?></label><br>
+                    <label><input ng-model="field.hide_prefilled" type="checkbox" name="customFieldHidePrefilled[]" /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchatformsettings','Hide if prefilled')?></label>
                 </div>
             </div>
 

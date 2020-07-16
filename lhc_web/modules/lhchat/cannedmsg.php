@@ -4,14 +4,18 @@ erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.cannedmsg', arra
 
 $tpl = erLhcoreClassTemplate::getInstance( 'lhchat/cannedmsg.tpl.php');
 
+
 /**
  * Append user departments filter
  * */
 $departmentParams = array();
 $userDepartments = erLhcoreClassUserDep::parseUserDepartmetnsForFilter($currentUser->getUserID());
 if ($userDepartments !== true){
-	$departmentParams['filterin']['department_id'] = $userDepartments;
-    $departmentParams['filterin']['department_id'][] = 0;
+    $departmentParams['filterin']['department_id'] = $userDepartments;
+
+   if ($currentUser->hasAccessTo('lhcannedmsg','see_global')) {
+       $departmentParams['filterin']['department_id'][] = 0;
+   }
 }
 
 if (is_numeric($Params['user_parameters_unordered']['id']) && $Params['user_parameters_unordered']['action'] == 'delete') {
@@ -28,6 +32,16 @@ if (is_numeric($Params['user_parameters_unordered']['id']) && $Params['user_para
         if ($userDepartments === true || in_array($Msg->department_id, $userDepartments)) {
             erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.cannedmsg_before_remove',array('msg' => & $Msg));
         	$Msg->removeThis();
+
+            erLhcoreClassLog::logObjectChange(array(
+                'object' => $Msg,
+                'check_log' => true,
+                'action' => 'Delete',
+                'msg' => array(
+                    'delete' => $Msg->getState(),
+                    'user_id' => $currentUser->getUserID()
+                )
+            ));
         }
         
     } catch (Exception $e) {

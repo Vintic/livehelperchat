@@ -30,6 +30,8 @@ if (erLhcoreClassModelChatConfig::fetch('hide_disabled_department')->current_val
 $tpl = erLhcoreClassTemplate::getInstance('lhchat/getstatusembed.tpl.php');
 $tpl->set('leaveamessage',(string)$Params['user_parameters_unordered']['leaveamessage'] == 'true');
 $tpl->set('hide_offline',$Params['user_parameters_unordered']['hide_offline']);
+$tpl->set('bot_id',is_numeric($Params['user_parameters_unordered']['bot_id']) ? $Params['user_parameters_unordered']['bot_id'] : null);
+$tpl->set('fresh',is_numeric($Params['user_parameters_unordered']['fresh']) ? true : false);
 
 if (is_array($Params['user_parameters_unordered']['department'])){
 	erLhcoreClassChat::validateFilterIn($Params['user_parameters_unordered']['department']);
@@ -46,7 +48,7 @@ if (is_array($Params['user_parameters_unordered']['ua'])){
 } else {
     $tpl->set('uarguments',false);
 }
-
+$tpl->set('referrer',isset($_GET['r']) ? rawurldecode($_GET['r']) : '');
 $tpl->set('priority',is_numeric($Params['user_parameters_unordered']['priority']) ? (int)$Params['user_parameters_unordered']['priority'] : false);
 $tpl->set('theme',is_numeric($Params['user_parameters_unordered']['theme']) ? (int)$Params['user_parameters_unordered']['theme'] : false);
 $tpl->set('operator',is_numeric($Params['user_parameters_unordered']['operator']) ? (int)$Params['user_parameters_unordered']['operator'] : false);

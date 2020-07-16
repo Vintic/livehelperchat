@@ -88,7 +88,7 @@ class erLhcoreClassRenderHelper {
         {
             $ngModelReplace = str_replace('$id', $item->id, $ngModel);
             $checked = in_array($item->id,$params['selected_id']) ? 'checked="checked"' : '';
-            $readOnly = isset($params['read_only_list']) && in_array($item->id,$params['read_only_list']) ? ' disabled="disabled" ' : '';
+            $readOnly = isset($params['read_only_list']) && is_array($params['read_only_list']) && in_array($item->id,$params['read_only_list']) ? ' disabled="disabled" ' : '';
             $output .= "{$prepend}<label class=\"control-label\"><input {$readOnly} type=\"checkbox\" {$ngModelReplace} {$ngChange} name=\"{$params['input_name']}\" value=\"{$item->id}\" {$checked} />".htmlspecialchars($item->name)."</label>{$append}";
         }
 
@@ -179,8 +179,9 @@ class erLhcoreClassRenderHelper {
                         </button>
                         <ul class="dropdown-menu" role="menu">
                         <li class="btn-block-department-filter">
-                        <input type="text" class="form-control input-sm" value="" />
-</li>
+                            <input type="text" class="form-control input-sm" value="" />
+                            <div class="selected-items-filter"></div>
+                        </li>
                         ';
 
         $items = call_user_func($params['list_function'],isset($params['list_function_params']) ? $params['list_function_params'] : array());

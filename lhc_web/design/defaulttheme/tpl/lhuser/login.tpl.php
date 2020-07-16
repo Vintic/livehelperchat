@@ -9,7 +9,7 @@
 <?php endif;?>
 
 <?php if (isset($session_ended)) : ?>
-    <?php $errors = array(erTranslationClassLhTranslation::getInstance()->getTranslation('user/login','You session has ended. Please login!')); ?>
+    <?php $errors = array(erTranslationClassLhTranslation::getInstance()->getTranslation('user/login','Your session has ended. Please login!')); ?>
     <?php include(erLhcoreClassDesign::designtpl('lhkernel/validation_error.tpl.php'));?>
 <?php endif;?>
 
@@ -28,6 +28,8 @@
 <div class="form-group">
     <label class="mb-1"><input class="input-checkbox" type="checkbox" name="rememberMe" value="1"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('user/login','Remember me');?></label>
 </div>
+
+<?php include(erLhcoreClassDesign::designtpl('lhuser/oauth_login_multiinclude_tab.tpl.php'));?>
 
 <?php include(erLhcoreClassDesign::designtpl('lhkernel/csfr_token.tpl.php'));?>
 

@@ -53,11 +53,18 @@ class NodeTriggerActionCommand extends Component {
                                 <option value="stopchat">Stop chat and transfer to human</option>
                                 <option value="transfertobot">Transfer chat to bot</option>
                                 <option value="closechat">Close chat</option>
-                                <option value="chatvariable">Set chat variable</option>
+                                <option value="chatvariable">Set chat variable [not visible by operator]</option>
+                                <option value="chatattribute">Set chat additional attribute [visible by operator]</option>
+                                <option value="dispatchevent">Dispatch Event</option>
+                                <option value="setchatattribute">Update main chat attribute</option>
                             </select>
                         </div>
                     </div>
                 </div>
+
+                {this.props.action.getIn(['content','command']) == 'closechat' && <div>
+                    <label><input type="checkbox" onChange={(e) => this.onchangeAttr({'path' : ['close_widget'], 'value' :e.target.checked})} defaultChecked={this.props.action.getIn(['content','close_widget'])} /> Close widget also.</label>
+                </div>}
 
                 {this.props.action.getIn(['content','command']) == 'stopchat' &&
                 <div>
@@ -84,10 +91,43 @@ class NodeTriggerActionCommand extends Component {
                 {this.props.action.getIn(['content','command']) == 'chatvariable' &&
                 <div>
                     <div className="form-group">
-                        <label>Set chat variables in json format.</label>
+                        <label>Set chat variables in JSON format.</label>
                         <input className="form-control form-control-sm" type="text" placeholder="{&quot;bot_touched&quot;:true}" onChange={(e) => this.onchangeAttr({'path':['payload'],'value':e.target.value})} defaultValue={this.props.action.getIn(['content','payload'])} />
                     </div>
                 </div>}
+
+                {this.props.action.getIn(['content','command']) == 'chatattribute' &&
+                <div>
+                    <div className="form-group">
+                        <label>Set chat attribute in JSON format.</label>
+                        <input className="form-control form-control-sm" type="text" placeholder="[{&quot;value&quot;:&quot;Attribute value or {content_1}&quot;,&quot;identifier&quot;:&quot;attribute_name&quot;,&quot;key&quot;:&quot;Attribute Name&quot;}]" onChange={(e) => this.onchangeAttr({'path':['payload'],'value':e.target.value})} defaultValue={this.props.action.getIn(['content','payload'])} />
+                    </div>
+                </div>}
+
+                {this.props.action.getIn(['content','command']) == 'setchatattribute' &&
+                <div>
+                    <div className="form-group">
+                        <label>Chat attribute name (nick,remarks,email,dep_id).</label>
+                        <input className="form-control form-control-sm" type="text" placeholder="remarks" onChange={(e) => this.onchangeAttr({'path':['payload'],'value':e.target.value})} defaultValue={this.props.action.getIn(['content','payload'])} />
+                    </div>
+                    <div className="form-group">
+                        <label>Chat attribute value.</label>
+                        <textarea className="form-control form-control-sm" type="text" placeholder="" onChange={(e) => this.onchangeAttr({'path':['payload_arg'],'value':e.target.value})} defaultValue={this.props.action.getIn(['content','payload_arg'])} ></textarea>
+                    </div>
+                </div>}
+
+                {this.props.action.getIn(['content','command']) == 'dispatchevent' &&
+                <div>
+                    <div className="form-group">
+                        <label>Event Name</label>
+                        <input className="form-control form-control-sm" type="text" placeholder="SetSubjectExtension" onChange={(e) => this.onchangeAttr({'path':['payload'],'value':e.target.value})} defaultValue={this.props.action.getIn(['content','payload'])} />
+                    </div>
+                    <div className="form-group">
+                        <label>Event argument</label>
+                        <input className="form-control form-control-sm" type="text" onChange={(e) => this.onchangeAttr({'path':['payload_arg'],'value':e.target.value})} defaultValue={this.props.action.getIn(['content','payload_arg'])} />
+                    </div>
+                </div>}
+
                 <hr className="hr-big" />
             </div>
         );

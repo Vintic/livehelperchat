@@ -10,27 +10,27 @@ trait erLhcoreClassDBTrait
         }
     }
 
-    public function saveThis()
+    public function saveThis($params = array())
     {
-        $this->beforeSave();
-        self::getSession()->saveOrUpdate($this);
-        $this->afterSave();
+        $this->beforeSave($params);
+        self::getSession()->saveOrUpdate($this, (isset($params['ignore']) ? $params['ignore'] : array()), (isset($params['update']) ? $params['update'] : array()));
+        $this->afterSave($params);
         $this->clearCache();
     }
 
-    public function saveOrUpdate()
+    public function saveOrUpdate($params = array())
     {
-        $this->beforeSave();
-        self::getSession()->saveOrUpdate($this);
-        $this->afterSave();
+        $this->beforeSave($params);
+        self::getSession()->saveOrUpdate($this, (isset($params['ignore']) ? $params['ignore'] : array()), (isset($params['update']) ? $params['update'] : array()));
+        $this->afterSave($params);
         $this->clearCache();
     }
 
-    public function updateThis()
+    public function updateThis($params = array())
     {
-        $this->beforeUpdate();
-        self::getSession()->update($this);
-        $this->afterUpdate();
+        $this->beforeUpdate($params);
+        self::getSession()->update($this, (isset($params['ignore']) ? $params['ignore'] : array()), (isset($params['update']) ? $params['update'] : array()));
+        $this->afterUpdate($params);
         $this->clearCache();
     }
 
@@ -56,12 +56,12 @@ trait erLhcoreClassDBTrait
         $this->setState($data);
     }
 
-    public function beforeSave()
+    public function beforeSave($params = array())
     {
 
     }
 
-    public function beforeUpdate()
+    public function beforeUpdate($params = array())
     {
 
     }
@@ -71,12 +71,12 @@ trait erLhcoreClassDBTrait
 
     }
 
-    public function afterSave()
+    public function afterSave($params = array())
     {
 
     }
 
-    public function afterUpdate()
+    public function afterUpdate($params = array())
     {
 
     }
@@ -153,7 +153,7 @@ trait erLhcoreClassDBTrait
 
     }
 
-    public static function fetchAndLock($id, $useCache = true)
+    public static function fetchAndLock($id, $useCache = false)
     {
         if (isset($GLOBALS[__CLASS__ . $id]) && $useCache == true) return $GLOBALS[__CLASS__ . $id];
 
@@ -214,7 +214,7 @@ trait erLhcoreClassDBTrait
 
     }
 
-    public static function getCount($params = array(), $operation = 'COUNT', $field = false, $rawSelect = false, $fetchColumn = true, $fetchAll = false)
+    public static function getCount($params = array(), $operation = 'COUNT', $field = false, $rawSelect = false, $fetchColumn = true, $fetchAll = false, $fetchColumnAll = false)
     {
 
         if (isset($params['enable_sql_cache']) && $params['enable_sql_cache'] == true) {
@@ -259,7 +259,7 @@ trait erLhcoreClassDBTrait
         if ($fetchColumn == true) {
             $result = $stmt->fetchColumn();
         } elseif ($fetchAll == true) {
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $stmt->fetchAll($fetchColumnAll === false ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN);
         } else {
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
         }
@@ -356,17 +356,23 @@ trait erLhcoreClassDBTrait
 
         if (isset($params['filter']) && count($params['filter']) > 0) {
             foreach ($params['filter'] as $field => $fieldValue) {
-                $conditions[] = $q->expr->eq($field, $q->bindValue($fieldValue));
+                if (is_array($fieldValue)) {
+                    if (!empty($fieldValue)) {
+                        $conditions[] = $q->expr->in($field, $fieldValue);
+                    }
+                } else {
+                    $conditions[] = $q->expr->eq($field, $q->bindValue($fieldValue));
+                }
             }
         }
 
         if (isset($params['filterin']) && count($params['filterin']) > 0) {
             foreach ($params['filterin'] as $field => $fieldValue) {
                 if (empty($fieldValue)) {
-                    return 0;
                     break;
+                } else {
+                    $conditions[] = $q->expr->in($field, $fieldValue);
                 }
-                $conditions[] = $q->expr->in($field, $fieldValue);
             }
         }
 
@@ -396,7 +402,13 @@ trait erLhcoreClassDBTrait
 
         if (isset($params['filternot']) && count($params['filternot']) > 0) {
             foreach ($params['filternot'] as $field => $fieldValue) {
-                $conditions[] = $q->expr->neq($field, $q->bindValue($fieldValue));
+                if (is_array($fieldValue)) {
+                    if (!empty($fieldValue)) {
+                        $conditions[] = $q->expr->not($q->expr->in($field, $fieldValue));
+                    }
+                } else {
+                    $conditions[] = $q->expr->neq($field, $q->bindValue($fieldValue));
+                }
             }
         }
 
@@ -459,13 +471,11 @@ trait erLhcoreClassDBTrait
         }
 
         if (isset($params['filternotin']) && count($params['filternotin']) > 0) {
-
             foreach ($params['filternotin'] as $field => $fieldValue) {
                 if (!empty($fieldValue)) {
                     $conditions[] = $q->expr->not($q->expr->in($field, $fieldValue));
                 }
             }
-
         }
 
         if (isset($params['filter_custom']) && count($params['filter_custom']) > 0) {

@@ -113,6 +113,9 @@
 			    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/listchatconfig/text_cookie_related.tpl.php'));?>		    		    
     		    <?php $attribute = 'track_domain'?>
     		    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/chat_settings.tpl.php'));?>
+
+                <?php $attribute = 'valid_domains'?>
+    		    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/chat_settings.tpl.php'));?>
     		    		    		    
     		    <?php $attribute = 'explicit_http_mode'?>
     		    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/chat_settings.tpl.php'));?>
@@ -140,6 +143,9 @@
     		    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/chat_settings.tpl.php'));?>
 
                 <?php $attribute = 'list_unread';$boolValue = true;?>
+    		    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/chat_settings.tpl.php'));?>
+
+                <?php $attribute = 'preload_iframes';$boolValue = true;?>
     		    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/chat_settings.tpl.php'));?>
 
     		    <?php $attribute = 'disable_popup_restore';$boolValue = true;?>

@@ -9,6 +9,8 @@ return array(
     ),
     'operator_name' => array(
         'type' => 'text',
+        'translatable' => true,
+        'main_attr_lang' => 'design_data_array',
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Operator name'),
         'required' => false,
         'hidden' => true,
@@ -56,6 +58,13 @@ return array(
         'hidden' => true,
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
     ),
+    'inject_only_html' => array(
+        'type' => 'checkbox',
+        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Inject only HTML, widget state will not be changed. Matched invitation is executed on each page load.'),
+        'required' => false,
+        'hidden' => true,
+        'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
+    ),
     'pageviews' => array(
         'type' => 'text',
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Pageviews'),
@@ -93,6 +102,13 @@ return array(
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Show on mobile'),
         'required' => false,
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'boolean')
+    ),
+    'show_everytime' => array(
+        'type' => 'checkbox',
+        'main_attr' => 'design_data_array',
+        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Show everytime it is matched'),
+        'required' => false,
+        'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
     ),
     'requires_phone' => array(
         'type' => 'checkbox',
@@ -134,7 +150,7 @@ return array(
         'required' => false,
         'hidden' => true,
         'source' => 'erLhAbstractModelAutoResponder::getList',
-        'params_call' => array(),
+        'params_call' => array('filter' => array('user_id' => 0)),
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
     ),
     'dep_id' => array(
@@ -143,12 +159,8 @@ return array(
         'required' => false,
         'hidden' => true,
         'source' => 'erLhcoreClassModelDepartament::getList',
-        'hide_optional' => false/*$userDepartments !== true*/,
-        'params_call' => ($userDepartments === true) ? array() : array(
-            'filterin' => array(
-                'id' => $userDepartments
-            )
-        ),
+        'hide_optional' => !empty($departmentFilterdefault = erLhcoreClassUserDep::conditionalDepartmentFilter()),
+        'params_call' => $departmentFilterdefault,
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
     ),
     'campaign_id' => array(
@@ -199,6 +211,8 @@ return array(
     ),
     'message' => array(
         'type' => 'textarea',
+        'translatable' => true,
+        'main_attr_lang' => 'design_data_array',
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Message to user'),
         'required' => true,
         'hidden' => true,
@@ -206,12 +220,16 @@ return array(
     ),
     'message_returning' => array(
         'type' => 'textarea',
+        'translatable' => true,
+        'main_attr_lang' => 'design_data_array',
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Message to returning user'),
         'required' => false,
         'hidden' => true,
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw')
     ),
     'message_returning_nick' => array(
+        'translatable' => true,
+        'main_attr_lang' => 'design_data_array',
         'type' => 'text',
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Nick which will be used if we cannot determine returning user name'),
         'required' => false,
@@ -237,7 +255,7 @@ return array(
     ),
     'iddle_for' => array(
         'type' => 'text',
-        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Show invitation if visitor is iddle for n seconds'),
+        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Show invitation if visitor is idle for n seconds'),
         'required' => false,
         'hidden' => true,
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw')
@@ -255,10 +273,32 @@ return array(
         'required' => false,
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
     ),
+    'dynamic_everytime' => array(
+        'type' => 'checkbox',
+        'main_attr' => 'design_data_array',
+        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Inject HTML everytime dynamic event occurs'),
+        'required' => false,
+        'hidden' => true,
+        'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
+    ),
     'api_do_not_show' => array(
         'type' => 'checkbox',
         'main_attr' => 'design_data_array',
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Do not show widget automatically'),
+        'required' => false,
+        'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
+    ),
+    'full_on_invitation' => array(
+        'type' => 'checkbox',
+        'main_attr' => 'design_data_array',
+        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Show widget on invitation to chat. Applies only to desktop devices.'),
+        'required' => false,
+        'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
+    ),
+    'append_bot' => array(
+        'type' => 'checkbox',
+        'main_attr' => 'design_data_array',
+        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/proactivechatinvitation', 'Append trigger content in full widget'),
         'required' => false,
         'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int')
     ),
@@ -267,6 +307,16 @@ return array(
         'main_attr' => 'design_data_array',
         'height' => '200px',
         'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/widgettheme','Mobile HTML'),
+        'required' => false,
+        'hidden' => true,
+        'nginit' => true,
+        'validation_definition' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw')
+    ),
+    'inject_html' => array(
+        'type' => 'textarea',
+        'main_attr' => 'design_data_array',
+        'height' => '200px',
+        'trans' => erTranslationClassLhTranslation::getInstance()->getTranslation('abstract/widgettheme','Inject HTML'),
         'required' => false,
         'hidden' => true,
         'nginit' => true,

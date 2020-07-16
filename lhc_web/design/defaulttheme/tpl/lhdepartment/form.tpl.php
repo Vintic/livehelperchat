@@ -279,7 +279,9 @@
 				</div>
 				
 				<div class="form-group">			
-				    <label><input type="checkbox" name="nc_cb_execute" value="on" <?php if ($departament->nc_cb_execute == 1) : ?>checked="checked"<?php endif;?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('department/edit','Execute new chat logic again for recipient department?');?></label><br>
+				    <label><input type="checkbox" name="off_op_exec" value="on" <?php if (isset($departament->bot_configuration_array['off_op_exec']) && $departament->bot_configuration_array['off_op_exec'] == 1) : ?>checked="checked"<?php endif;?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('department/edit','Transfer immediately to this department if current department has no online operators?');?></label><br>
+				    <label><input type="checkbox" name="ru_on_transfer" value="on" <?php if (isset($departament->bot_configuration_array['ru_on_transfer']) && $departament->bot_configuration_array['ru_on_transfer'] == 1) : ?>checked="checked"<?php endif;?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('department/edit','Reset assigned user on chat transfer?');?></label><br>
+                    <label><input type="checkbox" name="nc_cb_execute" value="on" <?php if ($departament->nc_cb_execute == 1) : ?>checked="checked"<?php endif;?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('department/edit','Execute new chat logic again for recipient department?');?></label><br>
 				    <label><input type="checkbox" name="na_cb_execute" value="on" <?php if ($departament->na_cb_execute == 1) : ?>checked="checked"<?php endif;?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('department/edit','Execute unanswered chat logic again for recipient department?');?></label>
 				</div>	  
 			</div>
@@ -375,7 +377,7 @@
 		       </div>
 
                <div class="form-group">
-                   <label><input type="checkbox" name="hide_send_email" value="on" <?php if (isset($departament->bot_configuration_array['hide_send_email']) && $departament->bot_configuration_array['hide_send_email'] == 1) : ?>checked="checked"<?php endif;?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/operatorsbalancing','Hide send button for operators');?></label>
+                   <label><input type="checkbox" name="hide_send_email" value="on" <?php if (isset($departament->bot_configuration_array['hide_send_email']) && $departament->bot_configuration_array['hide_send_email'] == 1) : ?>checked="checked"<?php endif;?> /> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/operatorsbalancing','Hide send e-mail button for operators in chat window');?></label>
                </div>
 
 		    </div>

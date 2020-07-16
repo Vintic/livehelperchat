@@ -11,6 +11,7 @@ $tpl->set('theme',false);
 if (isset($Params['user_parameters_unordered']['theme']) && (int)$Params['user_parameters_unordered']['theme'] > 0){
     try {
         $theme = erLhAbstractModelWidgetTheme::fetch($Params['user_parameters_unordered']['theme']);
+        $theme->translate();
         $tpl->set('theme',$theme);
     } catch (Exception $e) {
 
@@ -20,6 +21,7 @@ if (isset($Params['user_parameters_unordered']['theme']) && (int)$Params['user_p
     if ($defaultTheme > 0) {
         try {
             $theme = erLhAbstractModelWidgetTheme::fetch($defaultTheme);
+            $theme->translate();
             $tpl->set('theme',$theme);
         } catch (Exception $e) {
              
@@ -34,15 +36,10 @@ try {
     $db = ezcDbInstance::get();
     $db->beginTransaction();
     
-    $chat = erLhcoreClassModelChat::fetchAndLock($Params['user_parameters']['chat_id']);
+    $chat = erLhcoreClassModelChat::fetch($Params['user_parameters']['chat_id']);
     
     if ($chat->hash === $Params['user_parameters']['hash']) {   
 
-        if ($chat->status == erLhcoreClassModelChat::STATUS_PENDING_CHAT) {
-            // Lock chat record for update untill we finish this procedure
-            erLhcoreClassChat::lockDepartment($chat->dep_id, $db);
-         }
-        
     	// Main unasnwered chats callback
     	if ( $chat->na_cb_executed == 0 && $chat->status == erLhcoreClassModelChat::STATUS_PENDING_CHAT && erLhcoreClassModelChatConfig::fetch('run_unaswered_chat_workflow')->current_value > 0) {    		
     		$delay = time()-(erLhcoreClassModelChatConfig::fetch('run_unaswered_chat_workflow')->current_value*60);    		
@@ -61,7 +58,7 @@ try {
     			}
     		} else {
     			$chat->nc_cb_executed = 1;
-    			$chat->updateThis();
+    			$chat->updateThis(array('update' => array('nc_cb_executed')));
     		}
     	}
     	
@@ -87,7 +84,7 @@ try {
     				
     				if ($chat->status_sub != erLhcoreClassModelChat::STATUS_SUB_CONTACT_FORM) {
         				$chat->status_sub = erLhcoreClassModelChat::STATUS_SUB_CONTACT_FORM;
-        				$chat->updateThis();
+        				$chat->updateThis(array('update' => array('status_sub')));
     				}
     				
     			} else {
@@ -166,6 +163,8 @@ $responseArray['result'] = $tpl->fetch();
 $responseArray['activated'] = $activated;
 $responseArray['uid'] = (int)$chat->user_id;
 $responseArray['status'] = (int)$chat->status;
+
+erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.checkchatstatus',array('chat' => & $chat, 'response' => & $responseArray));
 
 echo json_encode($responseArray);
 exit;
